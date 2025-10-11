@@ -66,6 +66,14 @@ export const validateConfirmPassword = (password, confirmPassword) => {
   return null;
 };
 
+// UserType validation function
+export const validateUserType = (userType) => {
+  if (!userType || userType == "") {
+    return "Please select a user type";
+  }
+  return null;
+};
+
 // Main validation function for login form
 export const validateSignUp = (formData) => {
   const errors = {};
@@ -87,6 +95,9 @@ export const validateSignUp = (formData) => {
     formData.confirmPassword
   );
   if (confirmPasswordError) errors.confirmPassword = confirmPasswordError;
+
+  const userTypeError = validateUserType(formData.userType);
+  if (userTypeError) errors.userType = userTypeError;
 
   return errors;
 };
