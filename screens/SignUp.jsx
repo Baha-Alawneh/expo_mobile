@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Toast from "react-native-toast-message";
 import {
   View,
   Text,
@@ -8,11 +9,13 @@ import {
   Alert,
   Image,
 } from "react-native";
+import SelectPicker from "../components/select";
 import MainButton from "../components/button";
 import { Colors } from "../constants/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { validateSignUp } from "../validation/validationSignUp";
+import { registerUser } from "../apis/user/SignUp";
 const SignUp = () => {
   const navigation = useNavigation();
   const [username, setUsername] = useState("");
@@ -20,6 +23,12 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = React.useState({});
+  const [selectedValue, setSelectedValue] = useState("");
+  const lists = [
+    { label: "Company", value: "company" },
+    { label: "Visitor", value: "visitor" },
+    { label: "Student", value: "student" },
+  ];
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
@@ -59,7 +68,7 @@ const SignUp = () => {
         <View>
           <View style={styles.inputRow}>
             <Ionicons
-              name="person-outline"
+              name="mail-outline"
               size={28}
               color={Colors.WHITE}
               style={{ marginRight: 8 }}
@@ -134,6 +143,18 @@ const SignUp = () => {
             </Text>
           )}
         </View>
+        <View>
+          <SelectPicker
+            name="User Type"
+            lists={lists}
+            onSelect={(value) => setSelectedValue(value)}
+          />
+          {errors.userType && (
+            <Text style={{ color: "red", marginLeft: 20 }}>
+              {errors.userType}
+            </Text>
+          )}
+        </View>
 
         <MainButton
           backgroundColor={Colors.WHITE}
@@ -146,13 +167,25 @@ const SignUp = () => {
               password,
               username,
               confirmPassword,
+              userType: selectedValue,
             });
             setErrors(validationErrors);
 
-            if (validationErrors.email || validationErrors.password) {
+            if (
+              validationErrors.email ||
+              validationErrors.password ||
+              validationErrors.username ||
+              validationErrors.confirmPassword ||
+              validationErrors.userType
+            ) {
               return;
             }
-            navigation.navigate("Login");
+            navigation.navigate("Verify", {
+              name: username,
+              email,
+              password,
+              role: selectedValue,
+            });
           }}
         />
         <View style={styles.orRow}>
@@ -285,3 +318,42 @@ const styles = StyleSheet.create({
 });
 
 export default SignUp;
+
+// onPress={() => {
+//             const validationErrors = validateSignUp({
+//               email,
+//               password,
+//               username,
+//               confirmPassword,
+//               userType: selectedValue,
+//             });
+//             setErrors(validationErrors);
+
+//             if (
+//               validationErrors.email ||
+//               validationErrors.password ||
+//               validationErrors.username ||
+//               validationErrors.confirmPassword ||
+//               validationErrors.userType
+//             ) {
+//               return;
+//             }
+//             // Call the registerUser API
+//             registerUser({
+//               name: username,
+//               email: email,
+//               password: password,
+//               role: selectedValue,
+//             }).then((result) => {
+//               Toast.show({
+//                 type: result.success ? "success" : "error",
+//                 text1: result.success ? "Success" : "Error",
+//                 text2: result.message,
+//                 visibilityTime: 3000,
+//                 position: "center",
+//               });
+
+//               if (!result.success) {return};
+//               navigation.navigate("Login");
+//             });
+//           }}
