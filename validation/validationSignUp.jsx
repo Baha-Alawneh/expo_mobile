@@ -1,6 +1,4 @@
-// Validation types
 
-// UserName validation function
 export const validateUsername = (username) => {
   if (!username) {
     return "Username is required";
@@ -31,7 +29,6 @@ export const validateEmail = (email) => {
   return null;
 };
 
-// Password validation function
 export const validatePassword = (password) => {
   if (!password) {
     return "Password is required";
@@ -44,7 +41,7 @@ export const validatePassword = (password) => {
     return "Password must be at least 8 characters long";
   }
 
-  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
 
   if (!strongPasswordRegex.test(password)) {
     return "Weak password: add upper, lower, number";

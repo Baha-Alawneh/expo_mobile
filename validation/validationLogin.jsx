@@ -1,7 +1,4 @@
-// Validation types
 
-
-// Email validation function
 export const validateEmail = (email) => {
   if (!email) {
     return "Email is required";
@@ -19,7 +16,6 @@ export const validateEmail = (email) => {
   return null;
 };
 
-// Password validation function
 export const validatePassword = (password)=> {
   if (!password) {
     return "Password is required";
@@ -32,7 +28,6 @@ export const validatePassword = (password)=> {
   return null;
 };
 
-// Main validation function for login form
 export const validateLogin = (
   formData
 ) => {
