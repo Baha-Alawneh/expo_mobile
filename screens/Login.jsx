@@ -23,8 +23,6 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   return (
     <KeyboardAvoidingView
@@ -59,7 +57,7 @@ const Login = () => {
               <Text
                 style={[
                   styles.label,
-                  (isEmailFocused || email) && styles.labelFocused,
+                  email && styles.labelFocused,
                 ]}
               >
                 Email or Username
@@ -67,14 +65,13 @@ const Login = () => {
               <View
                 style={[
                   styles.inputWrapper,
-                  isEmailFocused && styles.inputWrapperFocused,
                   errors.email && styles.inputWrapperError,
                 ]}
               >
                 <Ionicons
                   name="mail-outline"
                   size={22}
-                  color={isEmailFocused ? Colors.WHITE : Colors.GRAY}
+                  color={Colors.GRAY}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -82,8 +79,7 @@ const Login = () => {
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   value={email}
                   onChangeText={setEmail}
-                  onFocus={() => setIsEmailFocused(true)}
-                  onBlur={() => setIsEmailFocused(false)}
+                  // Removed focus handlers
                   style={styles.textInput}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -99,7 +95,7 @@ const Login = () => {
               <Text
                 style={[
                   styles.label,
-                  (isPasswordFocused || password) && styles.labelFocused,
+                  password && styles.labelFocused,
                 ]}
               >
                 Password
@@ -107,14 +103,13 @@ const Login = () => {
               <View
                 style={[
                   styles.inputWrapper,
-                  isPasswordFocused && styles.inputWrapperFocused,
                   errors.password && styles.inputWrapperError,
                 ]}
               >
                 <Ionicons
                   name="lock-closed-outline"
                   size={22}
-                  color={isPasswordFocused ? Colors.WHITE : Colors.GRAY}
+                  color={Colors.GRAY}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -123,8 +118,7 @@ const Login = () => {
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
-                  onFocus={() => setIsPasswordFocused(true)}
-                  onBlur={() => setIsPasswordFocused(false)}
+                  // Removed focus handlers
                   style={styles.textInput}
                   autoCapitalize="none"
                   autoCorrect={false}
