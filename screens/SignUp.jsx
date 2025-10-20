@@ -26,6 +26,11 @@ const SignUp = () => {
   const [selectedUserType, setSelectedUserType] = useState("");
   const [errors, setErrors] = useState({});
 
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] =
+    useState(false);
 
   const userTypes = [
     { value: "visitor", label: "Visitor", icon: "person" },
@@ -55,7 +60,6 @@ const SignUp = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
         >
           {/* Logo Section */}
           <View style={styles.logoContainer}>
@@ -77,7 +81,7 @@ const SignUp = () => {
               <Text
                 style={[
                   styles.label,
-                  username && styles.labelFocused,
+                  (isUsernameFocused || username) && styles.labelFocused,
                 ]}
               >
                 Username
@@ -85,13 +89,14 @@ const SignUp = () => {
               <View
                 style={[
                   styles.inputWrapper,
+                  isUsernameFocused && styles.inputWrapperFocused,
                   errors.username && styles.inputWrapperError,
                 ]}
               >
                 <Ionicons
                   name="person-outline"
                   size={22}
-                  color={Colors.GRAY}
+                  color={isUsernameFocused ? Colors.WHITE : Colors.GRAY}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -99,7 +104,8 @@ const SignUp = () => {
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   value={username}
                   onChangeText={setUsername}
-                  // Removed focus handlers
+                  onFocus={() => setIsUsernameFocused(true)}
+                  onBlur={() => setIsUsernameFocused(false)}
                   style={styles.textInput}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -115,7 +121,7 @@ const SignUp = () => {
               <Text
                 style={[
                   styles.label,
-                  email && styles.labelFocused,
+                  (isEmailFocused || email) && styles.labelFocused,
                 ]}
               >
                 Email
@@ -123,13 +129,14 @@ const SignUp = () => {
               <View
                 style={[
                   styles.inputWrapper,
+                  isEmailFocused && styles.inputWrapperFocused,
                   errors.email && styles.inputWrapperError,
                 ]}
               >
                 <Ionicons
                   name="mail-outline"
                   size={22}
-                  color={Colors.GRAY}
+                  color={isEmailFocused ? Colors.WHITE : Colors.GRAY}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -137,7 +144,8 @@ const SignUp = () => {
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   value={email}
                   onChangeText={setEmail}
-                  // Removed focus handlers
+                  onFocus={() => setIsEmailFocused(true)}
+                  onBlur={() => setIsEmailFocused(false)}
                   style={styles.textInput}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -154,7 +162,7 @@ const SignUp = () => {
               <Text
                 style={[
                   styles.label,
-                  password && styles.labelFocused,
+                  (isPasswordFocused || password) && styles.labelFocused,
                 ]}
               >
                 Password
@@ -162,13 +170,14 @@ const SignUp = () => {
               <View
                 style={[
                   styles.inputWrapper,
+                  isPasswordFocused && styles.inputWrapperFocused,
                   errors.password && styles.inputWrapperError,
                 ]}
               >
                 <Ionicons
                   name="lock-closed-outline"
                   size={22}
-                  color={Colors.GRAY}
+                  color={isPasswordFocused ? Colors.WHITE : Colors.GRAY}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -177,7 +186,8 @@ const SignUp = () => {
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
-                  // Removed focus handlers
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
                   style={styles.textInput}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -193,7 +203,8 @@ const SignUp = () => {
               <Text
                 style={[
                   styles.label,
-                  confirmPassword && styles.labelFocused,
+                  (isConfirmPasswordFocused || confirmPassword) &&
+                    styles.labelFocused,
                 ]}
               >
                 Confirm Password
@@ -201,13 +212,14 @@ const SignUp = () => {
               <View
                 style={[
                   styles.inputWrapper,
+                  isConfirmPasswordFocused && styles.inputWrapperFocused,
                   errors.confirmPassword && styles.inputWrapperError,
                 ]}
               >
                 <Ionicons
                   name="lock-closed-outline"
                   size={22}
-                  color={Colors.GRAY}
+                  color={isConfirmPasswordFocused ? Colors.WHITE : Colors.GRAY}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -216,7 +228,8 @@ const SignUp = () => {
                   secureTextEntry
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
-                  // Removed focus handlers
+                  onFocus={() => setIsConfirmPasswordFocused(true)}
+                  onBlur={() => setIsConfirmPasswordFocused(false)}
                   style={styles.textInput}
                   autoCapitalize="none"
                   autoCorrect={false}
