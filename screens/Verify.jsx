@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,16 +6,23 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "../constants/config";
 import Toast from "react-native-toast-message";
-import MainButton from "../components/button";
 import { Colors } from "../constants/constants";
 import { registerUser } from "../apis/user/SignUp";
 
 const Verify = ({ route, navigation }) => {
-  const { name, email, password, role } = route.params;
-  const [code, setCode] = useState("");
+  const params = route?.params || {};
+  const { name = "", email = "", password = "", role = "" } = params;
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [validationStatus, setValidationStatus] = useState(null); // null, 'success', 'error'
+  const inputRefs = useRef([]);
+
   useEffect(() => {
     fetch(`${BASE_URL}/users/send-code`, {
       method: "POST",
@@ -40,17 +47,51 @@ const Verify = ({ route, navigation }) => {
       });
   }, []);
 
+  const handleCodeChange = (value, index) => {
+    if (validationStatus) {
+      setValidationStatus(null);
+    }
+
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e, index) => {
+    if (e.nativeEvent.key === "Backspace" && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
   const handleVerify = async () => {
+    const fullCode = code.join("");
+
+    if (fullCode.length !== 6) {
+      Toast.show({
+        type: "error",
+        text1: "Incomplete Code",
+        text2: "Please enter all 6 digits.",
+        position: "top",
+      });
+      return;
+    }
+
     try {
       const response = await fetch(`${BASE_URL}/users/verify-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code: fullCode }),
       });
 
       const verifyResult = await response.json();
 
       if (!verifyResult.success) {
+        setValidationStatus("error");
         Toast.show({
           type: "error",
           text1: "Invalid Code",
@@ -59,6 +100,8 @@ const Verify = ({ route, navigation }) => {
         });
         return;
       }
+
+      setValidationStatus("success");
 
       const regResult = await registerUser({
         name,
@@ -76,9 +119,12 @@ const Verify = ({ route, navigation }) => {
       });
 
       if (regResult.success) {
-        navigation.navigate("Login");
+        setTimeout(() => {
+          navigation.navigate("Login");
+        }, 1500);
       }
     } catch (error) {
+      setValidationStatus("error");
       Toast.show({
         type: "error",
         text1: "Error",
@@ -89,169 +135,285 @@ const Verify = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../assets/icons/expo-logo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-      <View style={[styles.form]}>
-        <View>
-          <Text
-            style={[
-              styles.whiteText,
-              { fontSize: 24, marginBottom: 30, fontWeight: "bold" },
-            ]}
-          >
-            Enter the verification code sent to email.
-          </Text>
-          <Text style={styles.whiteText}>
-            Please enter the 6-digit code sent to
-            <Text style={{ fontWeight: "bold" }}> {email} </Text>
-            Check your spam folder if you don't see the email.
-          </Text>
-        </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <LinearGradient
+        colors={[
+          Colors.mainColor,
+          "#2d4d85",
+          "#26447a",
+          "#1f3b6f",
+          "#193364",
+          "#152b59",
+          "#11234e",
+          "#0d1a3d",
+        ]}
+        locations={[0, 0.12, 0.25, 0.38, 0.52, 0.66, 0.82, 1]}
+        style={styles.gradient}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo Section */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoWrapper}>
+              <Image
+                source={require("../assets/icons/expo-logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.welcomeText}>Verify Your Email</Text>
+            <Text style={styles.subtitleText}>Enter the 6-digit code</Text>
+          </View>
 
-        <View style={[styles.inputRow, { marginTop: 15, marginBottom: 20 }]}>
-          <TextInput
-            placeholder="Enter code"
-            placeholderTextColor={Colors.GRAY}
-            value={code}
-            onChangeText={setCode}
-            style={styles.textInput}
-            editable={true}
-            keyboardType="numeric"
-          />
-        </View>
+          {/* Verification Content */}
+          <View style={styles.verifyContainer}>
+            <View style={styles.instructionContainer}>
+              <Text style={styles.instructionText}>
+                We've sent a verification code to
+              </Text>
+              <Text style={styles.emailText}>{email}</Text>
+              <Text style={styles.instructionSubText}>
+                Check your spam folder if you don't see it
+              </Text>
+            </View>
 
-        <MainButton
-          backgroundColor={Colors.WHITE}
-          color={Colors.mainColor}
-          width={"90%"}
-          text={"Verify"}
-          onPress={handleVerify}
-        />
-      </View>
-    </View>
+            {/* Code Input Boxes */}
+            <View style={styles.codeContainer}>
+              {code.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputRefs.current[index] = ref)}
+                  style={[
+                    styles.codeInput,
+                    validationStatus === "success" && styles.codeInputSuccess,
+                    validationStatus === "error" && styles.codeInputError,
+                  ]}
+                  value={digit}
+                  onChangeText={(value) => handleCodeChange(value, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  keyboardType="numeric"
+                  maxLength={1}
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
+
+            {/* Verify Button */}
+            <TouchableOpacity
+              style={styles.verifyButton}
+              onPress={handleVerify}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={["#ffffff", "#f0f0f0"]}
+                style={styles.verifyButtonGradient}
+              >
+                <Text style={styles.verifyButtonText}>VERIFY</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Resend Code */}
+            <TouchableOpacity
+              style={styles.resendContainer}
+              onPress={() => {
+                fetch(`${BASE_URL}/users/send-code`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email }),
+                })
+                  .then(() => {
+                    Toast.show({
+                      type: "success",
+                      text1: "Code Resent",
+                      text2: "A new verification code has been sent.",
+                      position: "top",
+                    });
+                  })
+                  .catch((error) => {
+                    Toast.show({
+                      type: "error",
+                      text1: "Error",
+                      text2: error.message,
+                      position: "top",
+                    });
+                  });
+              }}
+            >
+              <Text style={styles.resendText}>Didn't receive the code? </Text>
+              <Text style={styles.resendLink}>Resend</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.mainColor,
-  },
   container: {
     flex: 1,
+  },
+  gradient: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
     justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: Colors.mainColor,
   },
-  backPlaceholder: {
-    position: "absolute",
-    top: 36,
-    left: 12,
-    width: 36,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  backText: {
-    color: Colors.WHITE,
-    fontSize: 18,
-  },
-  form: {
-    width: "100%",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.WHITE,
-    borderRadius: 15,
-    paddingVertical: 30,
-    paddingLeft: 20,
-    paddingRight: 15,
-  },
+
+  // Logo Section
   logoContainer: {
     alignItems: "center",
-    marginBottom: 40,
-    marginTop: 20,
+    marginBottom: 50,
+  },
+  logoWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
   },
   logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 20,
-    padding: 15,
+    width: 70,
+    height: 70,
   },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  welcomeText: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: Colors.WHITE,
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subtitleText: {
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.7)",
+    fontWeight: "400",
+  },
+
+  // Verification Content
+  verifyContainer: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: Colors.WHITE,
-    borderRadius: 25,
-    paddingHorizontal: 12,
-    height: 50,
-    marginVertical: 8,
-    backgroundColor: "transparent",
+    alignItems: "center",
   },
-  iconPlaceholder: {
-    width: 30,
-    height: 30,
+  instructionContainer: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  instructionText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emailText: {
+    color: Colors.WHITE,
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  instructionSubText: {
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 13,
+    textAlign: "center",
+  },
+
+  // Code Input
+  codeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 40,
+    gap: 8,
+  },
+  codeInput: {
+    flex: 1,
+    height: 60,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    color: Colors.WHITE,
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  codeInputSuccess: {
+    borderColor: "#4caf50",
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    shadowColor: "#4caf50",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  codeInputError: {
+    borderColor: "#ff6b6b",
+    backgroundColor: "rgba(255, 107, 107, 0.1)",
+    shadowColor: "#ff6b6b",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  // Verify Button
+  verifyButton: {
+    width: "100%",
+    height: 56,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    marginBottom: 24,
+  },
+  verifyButtonGradient: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  textInput: {
-    flex: 1,
-    height: "100%",
-    color: Colors.WHITE,
-    paddingLeft: 10,
+  verifyButtonText: {
+    color: Colors.mainColor,
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 1.2,
   },
-  forgot: {
-    color: Colors.WHITE,
-    marginTop: 12,
-  },
-  signUpRow: {
+
+  // Resend Code
+  resendContainer: {
     flexDirection: "row",
-    marginTop: 8,
-  },
-  whiteText: {
-    color: Colors.WHITE,
-  },
-  signUpText: {
-    fontWeight: "bold",
-    marginLeft: 6,
-  },
-  orRow: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    width: "90%",
-    marginVertical: 12,
   },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.WHITE,
-    opacity: 0.5,
+  resendText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 14,
   },
-  orText: {
+  resendLink: {
     color: Colors.WHITE,
-    marginHorizontal: 8,
+    fontSize: 14,
+    fontWeight: "700",
   },
-  socialRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "60%",
-    marginTop: 6,
-  },
-  socialPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.12)",
-  },
-  /* legacy input style (unused by new layout but kept in case) */
 });
 
 export default Verify;

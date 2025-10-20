@@ -1,4 +1,4 @@
-export const SERVER_IP_AYMAN = "192.168.1.98";
+export const SERVER_IP_AYMAN = "192.168.1.153";
 export const SERVER_IP_BAHA = "192.168.88.252";
 export const SERVER_PORT = "5000";
 
