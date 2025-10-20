@@ -26,7 +26,6 @@ const SignUp = () => {
   const [selectedUserType, setSelectedUserType] = useState("");
   const [errors, setErrors] = useState({});
 
-
   const userTypes = [
     { value: "visitor", label: "Visitor", icon: "person" },
     { value: "student", label: "Student", icon: "school" },
@@ -74,12 +73,7 @@ const SignUp = () => {
           <View style={styles.formContainer}>
             {/* Username Input */}
             <View style={styles.inputContainer}>
-              <Text
-                style={[
-                  styles.label,
-                  username && styles.labelFocused,
-                ]}
-              >
+              <Text style={[styles.label, username && styles.labelFocused]}>
                 Username
               </Text>
               <View
@@ -112,12 +106,7 @@ const SignUp = () => {
 
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <Text
-                style={[
-                  styles.label,
-                  email && styles.labelFocused,
-                ]}
-              >
+              <Text style={[styles.label, email && styles.labelFocused]}>
                 Email
               </Text>
               <View
@@ -151,12 +140,7 @@ const SignUp = () => {
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text
-                style={[
-                  styles.label,
-                  password && styles.labelFocused,
-                ]}
-              >
+              <Text style={[styles.label, password && styles.labelFocused]}>
                 Password
               </Text>
               <View
@@ -191,10 +175,7 @@ const SignUp = () => {
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
               <Text
-                style={[
-                  styles.label,
-                  confirmPassword && styles.labelFocused,
-                ]}
+                style={[styles.label, confirmPassword && styles.labelFocused]}
               >
                 Confirm Password
               </Text>
