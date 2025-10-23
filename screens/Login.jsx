@@ -17,12 +17,25 @@ import { Colors } from "../constants/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { validateLogin } from "../validation/validationLogin";
+import { loginUser } from "../apis/user/SignUp";
 
 const Login = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+
+  const handleLogin = async () => {
+    const result = await loginUser({ email, password }, navigation);
+
+    if (!result.success) {
+      const errorReason =
+        result.data?.message ||
+        result.message ||
+        `Error code: ${result.status}`;
+      Alert.alert("Login Failed", errorReason);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -54,12 +67,7 @@ const Login = () => {
           <View style={styles.formContainer}>
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <Text
-                style={[
-                  styles.label,
-                  email && styles.labelFocused,
-                ]}
-              >
+              <Text style={[styles.label, email && styles.labelFocused]}>
                 Email or Username
               </Text>
               <View
@@ -92,12 +100,7 @@ const Login = () => {
             </View>
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text
-                style={[
-                  styles.label,
-                  password && styles.labelFocused,
-                ]}
-              >
+              <Text style={[styles.label, password && styles.labelFocused]}>
                 Password
               </Text>
               <View
@@ -145,7 +148,7 @@ const Login = () => {
                 if (validationErrors.email || validationErrors.password) {
                   return;
                 }
-                Alert.alert("Login pressed");
+                handleLogin();
               }}
               activeOpacity={0.8}
             >
