@@ -29,13 +29,23 @@ const Verify = ({ route, navigation }) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     })
-      .then(() => {
-        Toast.show({
-          type: "info",
-          text1: "Verification Code Sent",
-          text2: "Check your email for the code.",
-          position: "top",
-        });
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          Toast.show({
+            type: "info",
+            text1: "Verification Code Sent",
+            text2: data.message || "Check your email for the code.",
+            position: "top",
+          });
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: data.message || "Failed to send verification code",
+            position: "top",
+          });
+        }
       })
       .catch((error) => {
         Toast.show({
@@ -226,13 +236,25 @@ const Verify = ({ route, navigation }) => {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ email }),
                 })
-                  .then(() => {
-                    Toast.show({
-                      type: "success",
-                      text1: "Code Resent",
-                      text2: "A new verification code has been sent.",
-                      position: "top",
-                    });
+                  .then((res) => res.json())
+                  .then((data) => {
+                    if (data.success) {
+                      Toast.show({
+                        type: "success",
+                        text1: "Code Resent",
+                        text2:
+                          data.message ||
+                          "A new verification code has been sent.",
+                        position: "top",
+                      });
+                    } else {
+                      Toast.show({
+                        type: "error",
+                        text1: "Error",
+                        text2: data.message || "Failed to resend code",
+                        position: "top",
+                      });
+                    }
                   })
                   .catch((error) => {
                     Toast.show({
