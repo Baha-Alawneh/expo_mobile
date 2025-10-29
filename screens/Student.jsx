@@ -29,6 +29,7 @@ import {
   updateProject,
 } from "../apis/project/Project";
 import { uploadStudentFiles } from "../apis/student/StudentFiles";
+import { uploadProjectImages } from "../apis/project/ProjectImages";
 import { BASE_URL } from "../constants/config";
 
 const Student = () => {
@@ -43,9 +44,9 @@ const Student = () => {
   const [projectData, setProjectData] = useState({
     title: "",
     description: "",
-    demoLink: "",
-    images: [],
-    booth: "",
+    video_url: "",
+    project_photos: [],
+    github_link: "",
   });
 
   // Helper function to get status color and text
@@ -81,10 +82,9 @@ const Student = () => {
   const [myProject, setMyProject] = useState({
     title: "",
     description: "",
-    demoLink: "",
-    images: [],
-    status: "",
-    booth: "",
+    video_url: "",
+    github_link: "",
+    project_photos: [],
   });
 
   // Mock notifications
@@ -327,14 +327,17 @@ const Student = () => {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
+      allowsMultipleSelection: true, // Enable multiple selection
+      allowsEditing: false, // Disable editing when selecting multiple
+      quality: 0.8,
+      selectionLimit: 10, // Limit to 10 images
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets) {
+      // Add all selected images to the project_photos array
       setProjectData((prev) => ({
         ...prev,
-        images: [...(prev.images || []), result.assets[0].uri],
+        project_photos: [...(prev.project_photos || []), ...result.assets],
       }));
     }
   };
@@ -351,10 +354,9 @@ const Student = () => {
       const projectPayload = {
         title: projectData.title.trim(),
         description: projectData.description.trim(),
-        demoLink: projectData.demoLink.trim(),
-        // ensure images is always an array when sending to backend
-        images: Array.isArray(projectData.images) ? projectData.images : [],
-        booth: projectData.booth || myProject?.booth || "",
+        video_url: projectData.video_url?.trim() || "",
+        github_link: projectData.github_link?.trim() || "",
+        project_photos: projectData.project_photos || [],
       };
 
       let result;
@@ -367,23 +369,61 @@ const Student = () => {
       }
 
       if (result.success) {
+        // Upload images if any were selected
+        if (
+          projectData.project_photos &&
+          projectData.project_photos.length > 0
+        ) {
+          try {
+            Alert.alert("Uploading", "Uploading project images...");
+
+            const uploadResult = await uploadProjectImages(
+              userId,
+              projectData.project_photos
+            );
+
+            if (uploadResult.success) {
+              Alert.alert(
+                "Success",
+                editingProject
+                  ? "Project and images updated successfully!"
+                  : "Project and images added successfully!"
+              );
+            } else {
+              Alert.alert(
+                "Warning",
+                "Project saved but image upload failed: " + uploadResult.message
+              );
+            }
+          } catch (error) {
+            console.error("Error uploading images:", error);
+            Alert.alert(
+              "Warning",
+              "Project saved but image upload failed: " + error.message
+            );
+          }
+        } else {
+          Alert.alert(
+            "Success",
+            editingProject
+              ? "Project updated successfully!"
+              : "Project added successfully!"
+          );
+        }
+
+        // Reset form and refresh
         setMyProject(result.data);
         setProjectData({
           title: "",
           description: "",
-          demoLink: "",
-          images: [],
-          booth: "",
+          video_url: "",
+          project_photos: [],
+          github_link: "",
         });
         setShowAddProject(false);
         setEditingProject(false);
-        Alert.alert(
-          "Success",
-          editingProject
-            ? "Project updated successfully!"
-            : "Project added successfully!"
-        );
-        // Refresh project data
+
+        // Refresh project data to get updated images
         await fetchMyProject();
       } else {
         Alert.alert("Error", result.message || "Failed to save project");
@@ -396,12 +436,22 @@ const Student = () => {
 
   const editProject = () => {
     if (myProject) {
+      // Prepare project_photos in the format expected by ImagePicker
+      const preparedPhotos =
+        myProject.project_photos && Array.isArray(myProject.project_photos)
+          ? myProject.project_photos.map((photoUrl, index) => ({
+              uri: photoUrl,
+              fileName: photoUrl.split("/").pop() || `photo_${index}.jpg`,
+              type: "image/jpeg",
+            }))
+          : [];
+
       setProjectData({
         title: myProject.title || "",
         description: myProject.description || "",
-        demoLink: myProject.demoLink || "",
-        images: myProject.images || [],
-        booth: myProject.booth || "",
+        video_url: myProject.video_url || "",
+        project_photos: preparedPhotos,
+        github_link: myProject.github_link || "",
       });
       setEditingProject(true);
       setShowAddProject(true);
@@ -420,9 +470,9 @@ const Student = () => {
               setProjectData({
                 title: "",
                 description: "",
-                demoLink: "",
-                images: [],
-                booth: "",
+                video_url: "",
+                project_photos: [],
+                github_link: "",
               });
               setShowAddProject(true);
             }}
@@ -459,23 +509,25 @@ const Student = () => {
             {myProject.description}
           </Text>
 
-          {myProject.images?.length > 0 && (
+          {myProject.project_photos?.length > 0 && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.projectImagesContainer}
             >
-              {myProject.images.map((image, index) => (
+              {myProject.project_photos.map((photo, index) => (
                 <Image
                   key={index}
-                  source={{ uri: image }}
+                  source={{
+                    uri: typeof photo === "string" ? photo : photo.uri,
+                  }}
                   style={styles.projectImage}
                 />
               ))}
             </ScrollView>
           )}
 
-          {myProject.demoLink ? (
+          {myProject.video_url ? (
             <View style={styles.demoButton}>
               <Ionicons
                 name="link-outline"
@@ -485,13 +537,6 @@ const Student = () => {
               <Text style={styles.demoButtonText}>View Demo</Text>
             </View>
           ) : null}
-
-          {myProject.booth && (
-            <View style={styles.boothTag}>
-              <Ionicons name="location" size={16} color={Colors.mainColor} />
-              <Text style={styles.boothText}>Booth {myProject.booth}</Text>
-            </View>
-          )}
 
           <View style={styles.editProjectHint}>
             <Ionicons
@@ -537,13 +582,9 @@ const Student = () => {
           <Ionicons name="cube-outline" size={24} color={Colors.mainColor} />
           <Text style={styles.cardTitle}>My Project</Text>
         </View>
-        <Text style={styles.projectTitle}>{studentData.project.title}</Text>
-        <View style={styles.boothTag}>
-          <Ionicons name="location" size={16} color={Colors.mainColor} />
-          <Text style={styles.boothText}>
-            Booth {studentData.project.booth}
-          </Text>
-        </View>
+        <Text style={styles.projectTitle}>
+          {studentData.project?.title || "No project"}
+        </Text>
       </View>
 
       {/* Skills Card */}
@@ -623,31 +664,55 @@ const Student = () => {
   const handleFetchStudentData = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
+
+      if (!userId) {
+        Alert.alert("Error", "User ID not found. Please login again.");
+        return;
+      }
+
       const result = await getStudentData(userId);
-      console.log("Fetched student data:", result.data.data); // Debug log
-      if (result.success) {
-        const fetchedData = result.data.data;
+      console.log("Fetched student data:", result); // Debug log
+
+      // Handle unauthorized (401) error
+      if (result.unauthorized) {
+        Alert.alert("Session Expired", "Please login again.");
+        // TODO: Navigate to login screen
+        return;
+      }
+
+      if (result.success && result.data) {
+        const fetchedData = result.data;
         setStudentData((prev) => ({
           ...prev,
-          ...fetchedData,
-          // Use photo_url from S3 if available, otherwise keep current
+          name: fetchedData.name || prev.name,
+          email: fetchedData.email || prev.email,
+          major: fetchedData.major || prev.major,
+          year: fetchedData.year_of_study || fetchedData.year || prev.year,
+          skills: Array.isArray(fetchedData.skills)
+            ? fetchedData.skills
+            : typeof fetchedData.skills === "string"
+            ? JSON.parse(fetchedData.skills)
+            : prev.skills,
+          bio: fetchedData.bio || prev.bio,
+          // Use photo_url from S3 if available, otherwise keep placeholder
           photo: fetchedData.photo_url || prev.photo,
+          photo_url: fetchedData.photo_url || prev.photo_url,
+          photo_name: fetchedData.photo_name || prev.photo_name,
           // Use cv_name for display if available
           cv: fetchedData.cv_name
             ? fetchedData.cv_name.split("/").pop()
             : prev.cv,
-          // Store the full S3 URLs for later use
-          photo_url: fetchedData.photo_url,
-          cv_url: fetchedData.cv_url,
-          cv_name: fetchedData.cv_name,
-          photo_name: fetchedData.photo_name,
+          cv_url: fetchedData.cv_url || prev.cv_url,
+          cv_name: fetchedData.cv_name || prev.cv_name,
           project: fetchedData.project || prev.project,
         }));
       } else {
         console.warn("Failed to fetch student data:", result.message);
+        Alert.alert("Error", result.message || "Failed to load profile data");
       }
     } catch (error) {
       console.error("Error fetching student data:", error);
+      Alert.alert("Error", "An error occurred while loading your profile");
     }
   };
 
@@ -657,21 +722,31 @@ const Student = () => {
       const result = await getProject(userId);
       console.log("Fetched project data:", result.data); // Debug log
       if (result.success && result.data) {
-        // normalize project data to avoid undefined fields (like images)
-        const normalized = {
+        // Backend returns both 'images' and 'project_photos' (as signed URLs)
+        // Use project_photos if available (signed URLs), otherwise use images
+        const photos =
+          result.data.project_photos &&
+          Array.isArray(result.data.project_photos) &&
+          result.data.project_photos.length > 0
+            ? result.data.project_photos
+            : result.data.images && Array.isArray(result.data.images)
+            ? result.data.images
+            : [];
+
+        const projectData = {
           title: result.data.title || "",
           description: result.data.description || "",
-          demoLink: result.data.demoLink || result.data.github_link || "",
-          images: Array.isArray(result.data.images) ? result.data.images : [],
-          status: result.data.status || "",
+          video_url: result.data.video_url || "",
+          github_link: result.data.github_link || "",
+          project_photos: photos,
+          status: result.data.status || "pending",
           booth: result.data.booth || "",
           created_at: result.data.created_at || null,
           project_id: result.data.project_id || result.data.id || null,
           student_id: result.data.student_id || null,
-          // keep original raw data if needed
-          _raw: result.data,
         };
-        setMyProject(normalized);
+        console.log("Normalized project data:", projectData); // Debug log
+        setMyProject(projectData);
       } else {
         // No project found
         setMyProject(null);
@@ -724,13 +799,20 @@ const Student = () => {
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Image
-                source={{ uri: studentData.photo }}
+                source={{
+                  uri:
+                    studentData.photo ||
+                    studentData.photo_url ||
+                    "https://via.placeholder.com/150",
+                }}
                 style={styles.headerPhoto}
               />
               <View>
                 <Text style={styles.headerGreeting}>Welcome back,</Text>
                 <Text style={styles.headerName}>
-                  {studentData.name.split(" ")[0]}
+                  {studentData.name
+                    ? studentData.name.split(" ")[0]
+                    : "Student"}
                 </Text>
               </View>
             </View>
@@ -869,8 +951,9 @@ const Student = () => {
         {activeTab === "companies" && <CompaniesScreen />}
         {activeTab === "map" && (
           <MapScreen
-            studentProject={myProject?.title || studentData.project.title}
-            studentBooth={myProject?.booth || studentData.project.booth}
+            studentProject={
+              myProject?.title || studentData.project?.title || "No Project"
+            }
           />
         )}
 
@@ -922,24 +1005,24 @@ const Student = () => {
                   placeholder="Describe your project"
                 />
 
-                <Text style={styles.inputLabel}>Demo Link</Text>
+                <Text style={styles.inputLabel}>Demo Video Link</Text>
                 <TextInput
                   style={styles.input}
-                  value={projectData.demoLink}
+                  value={projectData.video_url}
                   onChangeText={(text) =>
-                    setProjectData((prev) => ({ ...prev, demoLink: text }))
+                    setProjectData((prev) => ({ ...prev, video_url: text }))
                   }
                   placeholder="https://your-demo-link.com"
                 />
 
-                <Text style={styles.inputLabel}>Booth Number</Text>
+                <Text style={styles.inputLabel}>GitHub Link</Text>
                 <TextInput
                   style={styles.input}
-                  value={projectData.booth}
+                  value={projectData.github_link}
                   onChangeText={(text) =>
-                    setProjectData((prev) => ({ ...prev, booth: text }))
+                    setProjectData((prev) => ({ ...prev, github_link: text }))
                   }
-                  placeholder="e.g., A-12"
+                  placeholder="https://github.com/username/repo"
                 />
 
                 <Text style={styles.inputLabel}>Project Images</Text>
@@ -952,15 +1035,19 @@ const Student = () => {
                     size={24}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.uploadImageText}>Upload Image</Text>
+                  <Text style={styles.uploadImageText}>
+                    {projectData.project_photos?.length > 0
+                      ? `${projectData.project_photos.length} image(s) selected`
+                      : "Select Multiple Images"}
+                  </Text>
                 </TouchableOpacity>
 
-                {projectData.images?.length > 0 && (
+                {projectData.project_photos?.length > 0 && (
                   <ScrollView horizontal style={styles.selectedImagesContainer}>
-                    {projectData.images.map((image, index) => (
+                    {projectData.project_photos.map((photo, index) => (
                       <View key={index} style={styles.selectedImageContainer}>
                         <Image
-                          source={{ uri: image }}
+                          source={{ uri: photo.uri || photo }}
                           style={styles.selectedImage}
                         />
                         <TouchableOpacity
@@ -968,7 +1055,9 @@ const Student = () => {
                           onPress={() =>
                             setProjectData((prev) => ({
                               ...prev,
-                              images: prev.images.filter((_, i) => i !== index),
+                              project_photos: prev.project_photos.filter(
+                                (_, i) => i !== index
+                              ),
                             }))
                           }
                         >
@@ -1072,7 +1161,12 @@ const Student = () => {
                   onPress={pickImage}
                 >
                   <Image
-                    source={{ uri: studentData.photo }}
+                    source={{
+                      uri:
+                        studentData.photo ||
+                        studentData.photo_url ||
+                        "https://via.placeholder.com/150",
+                    }}
                     style={styles.editPhoto}
                   />
                   <View style={styles.editPhotoButton}>
