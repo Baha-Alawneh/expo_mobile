@@ -156,3 +156,55 @@ export const updateProject = async (user_id, projectData) => {
     }
   }
 };
+
+// GET all projects except user's own project
+export const getAllProjectsExceptMine = async (user_id) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.get(
+      `${BASE_URL}/projects/all/except/${user_id}`,
+      { headers }
+    );
+
+    // Handle new response format
+    if (response.data.success) {
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message || "Projects fetched successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to fetch projects",
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      // Handle 401 Unauthorized
+      if (error.response.status === 401) {
+        return {
+          success: false,
+          message: "Session expired. Please login again.",
+          unauthorized: true,
+        };
+      }
+      // Handle 404 Not Found (no projects)
+      if (error.response.status === 404) {
+        return {
+          success: false,
+          message: error.response.data.message || "No projects found",
+          notFound: true,
+        };
+      }
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};
