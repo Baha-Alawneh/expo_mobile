@@ -6,6 +6,7 @@ import SignUp from "../screens/SignUp";
 import Login from "../screens/Login";
 import Verify from "../screens/Verify";
 import Student from "../screens/Student";
+import MapScreen from "../screens/MapScreen";
 import Toast from "react-native-toast-message";
 const Stack = createNativeStackNavigator();
 
@@ -34,6 +35,14 @@ export default function App() {
             name="Student"
             component={Student}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Map"
+            component={MapScreen}
+            options={{ 
+              title: "Expo Floor Map",
+              headerShown: true 
+            }}
           />
         </Stack.Navigator>
       </NavigationContainer>
