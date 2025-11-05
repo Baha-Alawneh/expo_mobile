@@ -11,28 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 
 const MapScreen = ({ studentProject, studentBooth }) => {
-  // Mock companies data for nearby section
-  const companies = [
-    {
-      id: 1,
-      name: "Tech Solutions Co.",
-      logo: "https://logo.clearbit.com/microsoft.com",
-      booth: "E-01",
-    },
-    {
-      id: 2,
-      name: "Innovation Labs",
-      logo: "https://logo.clearbit.com/google.com",
-      booth: "E-02",
-    },
-    {
-      id: 3,
-      name: "Digital Dynamics",
-      logo: "https://logo.clearbit.com/amazon.com",
-      booth: "E-03",
-    },
-  ];
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.mapHeader}>
@@ -108,28 +86,6 @@ const MapScreen = ({ studentProject, studentBooth }) => {
             <Text style={styles.navigateButtonText}>Navigate</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Nearby Companies */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons
-            name="business-outline"
-            size={24}
-            color={Colors.mainColor}
-          />
-          <Text style={styles.cardTitle}>Nearby Companies</Text>
-        </View>
-        {companies.map((company) => (
-          <TouchableOpacity key={company.id} style={styles.nearbyItem}>
-            <Image source={{ uri: company.logo }} style={styles.nearbyLogo} />
-            <View style={styles.nearbyInfo}>
-              <Text style={styles.nearbyName}>{company.name}</Text>
-              <Text style={styles.nearbyBooth}>Booth {company.booth}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
-        ))}
       </View>
     </ScrollView>
   );
