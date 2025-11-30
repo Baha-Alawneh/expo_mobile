@@ -432,7 +432,6 @@ const styles = StyleSheet.create({
   userTypeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 10,
   },
   userTypeButton: {
     flex: 1,
@@ -532,7 +531,6 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
   },
   socialButton: {
     width: 54,

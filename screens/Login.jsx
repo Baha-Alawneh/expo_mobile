@@ -373,7 +373,6 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
   },
   socialButton: {
     width: 56,

@@ -369,7 +369,6 @@ const styles = StyleSheet.create({
   retryButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     marginTop: 20,
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -447,7 +446,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
-    gap: 10,
   },
   cardTitle: {
     fontSize: 18,
@@ -463,7 +461,6 @@ const styles = StyleSheet.create({
   boothTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
   },
   boothText: {
     fontSize: 14,
@@ -473,7 +470,6 @@ const styles = StyleSheet.create({
   skillsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
   },
   skillChip: {
     backgroundColor: "#E3F2FD",
@@ -499,7 +495,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F4FF",
     padding: 15,
     borderRadius: 10,
-    gap: 10,
   },
   cvButtonDisabled: {
     backgroundColor: "#F5F5F5",

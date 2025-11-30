@@ -271,7 +271,6 @@ const styles = StyleSheet.create({
   boothTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
   },
   boothText: {
     fontSize: 14,

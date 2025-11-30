@@ -423,7 +423,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
-    gap: 6,
     position: "relative",
   },
   filterTabActive: {
@@ -553,7 +552,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
-    gap: 12,
   },
   messageInput: {
     flex: 1,

@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
   mapLegendButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
   },
   mapLegendText: {
     color: Colors.mainColor,
@@ -134,7 +133,6 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
   legendDot: {
     width: 12,
@@ -192,7 +190,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
-    gap: 10,
   },
   cardTitle: {
     fontSize: 18,
@@ -224,7 +221,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    gap: 6,
   },
   navigateButtonText: {
     color: "#fff",
