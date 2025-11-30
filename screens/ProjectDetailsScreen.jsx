@@ -137,7 +137,7 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
             {project.students && project.students.length > 0 && (
               <View style={styles.modernProjectSection}>
                 <View style={styles.modernSectionHeader}>
-                  <Ionicons name="people" size={20} color={Colors.mainColor} style={{marginRight: 8}} />
+                  <Ionicons name="people" size={20} color={Colors.mainColor} />
                   <Text style={styles.modernSectionTitle}>
                     Team Members ({project.students.length})
                   </Text>
@@ -154,7 +154,7 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                         });
                       }}
                     >
-                      <View style={[styles.modernMemberAvatar, {marginRight: 12}]}>
+                      <View style={styles.modernMemberAvatar}>
                         {student.photo_url ? (
                           <Image
                             source={{ uri: student.photo_url }}
@@ -179,7 +179,6 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                         name="chevron-forward"
                         size={20}
                         color={Colors.mainColor}
-                        style={{marginLeft: 12}}
                       />
                     </TouchableOpacity>
                   ))}
@@ -351,6 +350,7 @@ const styles = StyleSheet.create({
   modernProjectTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
     marginBottom: 12,
   },
   modernProjectTitle: {
@@ -362,6 +362,7 @@ const styles = StyleSheet.create({
   modernStatusBadge: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -380,6 +381,7 @@ const styles = StyleSheet.create({
   modernSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
     marginBottom: 12,
   },
   modernSectionTitle: {
@@ -395,6 +397,7 @@ const styles = StyleSheet.create({
   },
   modernTeamContainer: {
     paddingLeft: 28,
+    gap: 10,
   },
   modernMemberCard: {
     flexDirection: "row",
@@ -402,7 +405,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 12,
-    marginBottom: 10,
+    gap: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
@@ -477,6 +480,7 @@ const styles = StyleSheet.create({
   },
   modernLinksContainer: {
     paddingLeft: 28,
+    gap: 12,
   },
   modernLinkButton: {
     flexDirection: "row",
@@ -484,6 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 12,
+    gap: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
