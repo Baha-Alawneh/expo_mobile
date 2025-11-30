@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,54 +6,84 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
+import { getAllCompanies } from "../apis/company/Company";
 
-const CompaniesScreen = () => {
-  // Mock companies data
-  const companies = [
-    {
-      id: 1,
-      name: "Tech Solutions Co.",
-      logo: "https://logo.clearbit.com/microsoft.com",
-      description:
-        "Leading software development company specializing in enterprise solutions and cloud services.",
-      industry: "Software Development",
-      booth: "E-01",
-      hiring: true,
-    },
-    {
-      id: 2,
-      name: "Innovation Labs",
-      logo: "https://logo.clearbit.com/google.com",
-      description:
-        "AI and Machine Learning specialists focused on cutting-edge research and development.",
-      industry: "AI & Machine Learning",
-      booth: "E-02",
-      hiring: true,
-    },
-    {
-      id: 3,
-      name: "Digital Dynamics",
-      logo: "https://logo.clearbit.com/amazon.com",
-      description:
-        "Cloud computing and DevOps experts providing scalable infrastructure solutions.",
-      industry: "Cloud & DevOps",
-      booth: "E-03",
-      hiring: false,
-    },
-    {
-      id: 4,
-      name: "CyberShield Inc.",
-      logo: "https://logo.clearbit.com/ibm.com",
-      description:
-        "Cybersecurity firm protecting businesses from digital threats.",
-      industry: "Cybersecurity",
-      booth: "E-04",
-      hiring: true,
-    },
-  ];
+const CompaniesScreen = ({ navigation }) => {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchCompanies = async () => {
+    try {
+      setError(null);
+      const response = await getAllCompanies();
+      console.log("Fetched companies response:", response);
+
+      if (response.success) {
+        const companiesData = response.data || [];
+        console.log("Companies data:", companiesData);
+        setCompanies(companiesData);
+      } else {
+        setError(response.message || "Failed to fetch companies");
+      }
+    } catch (err) {
+      console.error("Error fetching companies:", err);
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCompanies();
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="business-outline" size={80} color="#ccc" />
+      <Text style={styles.emptyStateText}>No companies found</Text>
+      <Text style={styles.emptyStateSubtext}>
+        Participating companies will appear here
+      </Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="alert-circle-outline" size={80} color="#ff6b6b" />
+      <Text style={styles.emptyStateText}>Error loading companies</Text>
+      <Text style={styles.emptyStateSubtext}>{error}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={fetchCompanies}>
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.mainColor} />
+        <Text style={styles.loadingText}>Loading companies...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return <View style={styles.container}>{renderErrorState()}</View>;
+  }
 
   return (
     <View style={styles.container}>
@@ -63,36 +93,64 @@ const CompaniesScreen = () => {
       </View>
       <FlatList
         data={companies}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) =>
+          item.company_id?.toString() || item.id?.toString()
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.mainColor]}
+          />
+        }
+        ListEmptyComponent={renderEmptyState}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.companyCard}>
+          <TouchableOpacity
+            style={styles.companyCard}
+            onPress={() => {
+              navigation.navigate("CompanyDetailsScreen", {
+                company: item,
+              });
+            }}
+          >
             <View style={styles.companyLogoContainer}>
-              <Image source={{ uri: item.logo }} style={styles.companyLogo} />
+              {item.profile_image_url ? (
+                <Image
+                  source={{ uri: item.profile_image_url }}
+                  style={styles.companyLogo}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Ionicons name="business" size={40} color="#CCC" />
+              )}
             </View>
             <View style={styles.companyInfo}>
               <View style={styles.companyHeader}>
-                <Text style={styles.companyName}>{item.name}</Text>
-                {item.hiring && (
-                  <View style={styles.hiringBadge}>
-                    <Text style={styles.hiringText}>Hiring</Text>
+                <Text style={styles.companyName}>
+                  {item.company_name || "Unnamed Company"}
+                </Text>
+              </View>
+              {item.category && (
+                <Text style={styles.companyIndustry}>{item.category}</Text>
+              )}
+              {item.description && (
+                <Text style={styles.companyDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              )}
+              <View style={styles.companyFooter}>
+                {item.booth_id && (
+                  <View style={styles.boothTag}>
+                    <Ionicons
+                      name="location"
+                      size={14}
+                      color={Colors.mainColor}
+                    />
+                    <Text style={styles.boothText}>Booth {item.booth_id}</Text>
                   </View>
                 )}
-              </View>
-              <Text style={styles.companyIndustry}>{item.industry}</Text>
-              <Text style={styles.companyDescription} numberOfLines={2}>
-                {item.description}
-              </Text>
-              <View style={styles.companyFooter}>
-                <View style={styles.boothTag}>
-                  <Ionicons
-                    name="location"
-                    size={14}
-                    color={Colors.mainColor}
-                  />
-                  <Text style={styles.boothText}>Booth {item.booth}</Text>
-                </View>
                 <Ionicons
                   name="chevron-forward"
                   size={20}
@@ -112,6 +170,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FA",
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
   },
   listContent: {
     paddingBottom: 20,
@@ -152,8 +221,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   companyLogo: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
   },
   companyInfo: {
     flex: 1,
@@ -207,6 +276,36 @@ const styles = StyleSheet.create({
   boothText: {
     fontSize: 14,
     color: Colors.mainColor,
+    fontWeight: "600",
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#666",
+    marginTop: 15,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: "#999",
+    marginTop: 5,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: Colors.mainColor,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "600",
   },
 });

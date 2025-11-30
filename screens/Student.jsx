@@ -24,6 +24,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getStudentData, postStudentData } from "../apis/student/Student";
 import { uploadStudentFiles } from "../apis/student/StudentFiles";
 import { BASE_URL } from "../constants/config";
+import {
+  subscribeToUnreadCount,
+  createOrUpdateUser,
+} from "../utils/chatService";
 
 const Student = ({ navigation }) => {
   // States
@@ -31,6 +35,7 @@ const Student = ({ navigation }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [newSkill, setNewSkill] = useState("");
 
   // Helper function to get status color and text
@@ -112,7 +117,6 @@ const Student = ({ navigation }) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1],
       quality: 0.5, // Reduced quality to 0.5 to reduce file size for better upload success
     });
 
@@ -417,6 +421,23 @@ const Student = ({ navigation }) => {
           cv_name: fetchedData.cv_name || prev.cv_name,
           project: fetchedData.project || prev.project,
         }));
+
+        // Sync updated profile to Firestore for chat system
+        try {
+          const userType = await AsyncStorage.getItem("userType");
+          await createOrUpdateUser(userId, {
+            name: fetchedData.name || "Student",
+            email: fetchedData.email || "",
+            type: userType || "student",
+            photoUrl: fetchedData.photo_url || null,
+          });
+          // Update userName in AsyncStorage for chat messages
+          if (fetchedData.name) {
+            await AsyncStorage.setItem("userName", fetchedData.name);
+          }
+        } catch (syncError) {
+          console.log("Firestore sync warning:", syncError);
+        }
       } else {
         Alert.alert("Error", result.message || "Failed to load profile data");
       }
@@ -437,6 +458,26 @@ const Student = ({ navigation }) => {
           ...result.data,
           project: result.data.project || prev.project,
         }));
+
+        // Sync updated profile to Firestore for chat system
+        try {
+          const userType = await AsyncStorage.getItem("userType");
+          await createOrUpdateUser(userId, {
+            name: result.data.name || studentData.name || "Student",
+            email: result.data.email || studentData.email || "",
+            type: userType || "student",
+            photoUrl: result.data.photo_url || studentData.photo_url || null,
+          });
+          // Update userName in AsyncStorage for chat messages
+          if (result.data.name || studentData.name) {
+            await AsyncStorage.setItem(
+              "userName",
+              result.data.name || studentData.name
+            );
+          }
+        } catch (syncError) {
+          console.log("Firestore sync warning:", syncError);
+        }
       } else {
         alert("Update failed: " + result.message);
       }
@@ -449,6 +490,22 @@ const Student = ({ navigation }) => {
   useEffect(() => {
     handleFetchStudentData();
   }, []);
+
+  useEffect(() => {
+    // Subscribe to real-time unread message count
+    const initializeChat = async () => {
+      const userId = await AsyncStorage.getItem("userId");
+      if (userId) {
+        const unsubscribe = subscribeToUnreadCount(userId, (count) => {
+          setChatUnreadCount(count);
+        });
+        return unsubscribe;
+      }
+    };
+
+    initializeChat();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -479,17 +536,32 @@ const Student = ({ navigation }) => {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => setShowNotifications(true)}
-            >
-              <Ionicons name="notifications-outline" size={28} color="#fff" />
-              {unreadCount > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.badgeText}>{unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => navigation.navigate("ChatListScreen")}
+              >
+                <Ionicons name="chatbubbles-outline" size={28} color="#fff" />
+                {chatUnreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.badgeText}>
+                      {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setShowNotifications(true)}
+              >
+                <Ionicons name="notifications-outline" size={28} color="#fff" />
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -602,7 +674,9 @@ const Student = ({ navigation }) => {
         {activeTab === "students" && (
           <OtherProjectsScreen navigation={navigation} />
         )}
-        {activeTab === "companies" && <CompaniesScreen />}
+        {activeTab === "companies" && (
+          <CompaniesScreen navigation={navigation} />
+        )}
         {activeTab === "map" && (
           <MapScreen
             studentProject={studentData.project?.title || "No Project"}
@@ -861,6 +935,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   notificationButton: {
+    position: "relative",
+    padding: 5,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  iconButton: {
     position: "relative",
     padding: 5,
   },
