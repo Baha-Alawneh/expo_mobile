@@ -6,8 +6,14 @@ import SignUp from "../screens/SignUp";
 import Login from "../screens/Login";
 import Verify from "../screens/Verify";
 import Student from "../screens/Student";
+import Company from "../screens/Company";
 import MyProjectScreen from "../screens/MyProjectScreen";
+import MyOfferingScreen from "../screens/MyOfferingScreen";
 import ProjectDetailsScreen from "../screens/ProjectDetailsScreen";
+import CompanyDetailsScreen from "../screens/CompanyDetailsScreen";
+import StudentDetailsScreen from "../screens/StudentDetailsScreen";
+import ChatListScreen from "../screens/ChatListScreen";
+import ConversationScreen from "../screens/ConversationScreen";
 import Toast from "react-native-toast-message";
 const Stack = createNativeStackNavigator();
 
@@ -38,13 +44,43 @@ export default function App() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="Company"
+            component={Company}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="MyProject"
             component={MyProjectScreen}
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="MyOffering"
+            component={MyOfferingScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="ProjectDetails"
             component={ProjectDetailsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CompanyDetailsScreen"
+            component={CompanyDetailsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="StudentDetailsScreen"
+            component={StudentDetailsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ChatListScreen"
+            component={ChatListScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ConversationScreen"
+            component={ConversationScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>
