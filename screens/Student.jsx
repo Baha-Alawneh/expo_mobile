@@ -296,7 +296,7 @@ const Student = ({ navigation }) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="cube-outline" size={24} color={Colors.mainColor} />
-          <Text style={styles.cardTitle}>My Project</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 10 }]}>My Project</Text>
         </View>
         <Text style={styles.projectTitle}>
           {studentData.project?.title || "No project"}
@@ -311,7 +311,7 @@ const Student = ({ navigation }) => {
             size={24}
             color={Colors.mainColor}
           />
-          <Text style={styles.cardTitle}>Skills</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 10 }]}>Skills</Text>
         </View>
         <View style={styles.skillsContainer}>
           {studentData.skills?.map((skill, index) => (
@@ -326,7 +326,7 @@ const Student = ({ navigation }) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="person-outline" size={24} color={Colors.mainColor} />
-          <Text style={styles.cardTitle}>About Me</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 10 }]}>About Me</Text>
         </View>
         <Text style={styles.bioText}>{studentData.bio}</Text>
       </View>
@@ -339,7 +339,9 @@ const Student = ({ navigation }) => {
             size={24}
             color={Colors.mainColor}
           />
-          <Text style={styles.cardTitle}>Curriculum Vitae</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+            Curriculum Vitae
+          </Text>
         </View>
         <TouchableOpacity style={styles.cvButton} onPress={downloadCV}>
           <Ionicons
@@ -358,6 +360,7 @@ const Student = ({ navigation }) => {
               styles.cvButtonText,
               !(studentData.cv || studentData.cv_name) &&
                 styles.cvButtonTextDisabled,
+              { marginLeft: 8 },
             ]}
           >
             {studentData.cv || studentData.cv_name
@@ -372,7 +375,9 @@ const Student = ({ navigation }) => {
         onPress={() => setShowEditProfile(true)}
       >
         <Ionicons name="create-outline" size={20} color="#fff" />
-        <Text style={styles.editButtonText}>Edit Profile</Text>
+        <Text style={[styles.editButtonText, { marginLeft: 8 }]}>
+          Edit Profile
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -585,6 +590,7 @@ const Student = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "profile" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Profile
@@ -600,7 +606,9 @@ const Student = ({ navigation }) => {
                 size={20}
                 color={Colors.mainColor}
               />
-              <Text style={styles.tabText}>My Project</Text>
+              <Text style={[styles.tabText, { marginLeft: 8 }]}>
+                My Project
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -618,6 +626,7 @@ const Student = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "students" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Other Projects
@@ -642,6 +651,7 @@ const Student = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "companies" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Companies
@@ -661,6 +671,7 @@ const Student = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "map" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Map
@@ -866,7 +877,7 @@ const Student = ({ navigation }) => {
                     size={20}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.cvUploadButtonText}>
+                  <Text style={[styles.cvUploadButtonText, { marginLeft: 8 }]}>
                     {studentData.cv || "Upload CV (PDF)"}
                   </Text>
                 </TouchableOpacity>

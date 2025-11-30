@@ -48,6 +48,7 @@ const Visitor = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "projects" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Projects
@@ -72,6 +73,7 @@ const Visitor = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "companies" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Companies
@@ -91,6 +93,7 @@ const Visitor = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "map" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Map

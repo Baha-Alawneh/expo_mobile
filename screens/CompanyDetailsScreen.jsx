@@ -131,7 +131,9 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                 size={24}
                 color={Colors.mainColor}
               />
-              <Text style={styles.cardTitle}>Company Information</Text>
+              <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+                Company Information
+              </Text>
             </View>
 
             {/* Description */}
@@ -148,7 +150,9 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                 <Text style={styles.infoLabel}>Phone</Text>
                 <View style={styles.infoRow}>
                   <Ionicons name="call" size={18} color={Colors.mainColor} />
-                  <Text style={styles.infoValueWithIcon}>{company.phone}</Text>
+                  <Text style={[styles.infoValueWithIcon, { marginLeft: 8 }]}>
+                    {company.phone}
+                  </Text>
                 </View>
               </View>
             ) : null}
@@ -159,7 +163,9 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                 <Text style={styles.infoLabel}>Email</Text>
                 <View style={styles.infoRow}>
                   <Ionicons name="mail" size={18} color={Colors.mainColor} />
-                  <Text style={styles.infoValueWithIcon}>{company.email}</Text>
+                  <Text style={[styles.infoValueWithIcon, { marginLeft: 8 }]}>
+                    {company.email}
+                  </Text>
                 </View>
               </View>
             ) : null}
@@ -173,7 +179,10 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                   onPress={() => openLink(company.website_url)}
                 >
                   <Ionicons name="globe" size={18} color={Colors.mainColor} />
-                  <Text style={styles.websiteText} numberOfLines={1}>
+                  <Text
+                    style={[styles.websiteText, { marginLeft: 8 }]}
+                    numberOfLines={1}
+                  >
                     {company.website_url}
                   </Text>
                   <Ionicons
@@ -195,7 +204,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                     size={18}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.infoValueWithIcon}>
+                  <Text style={[styles.infoValueWithIcon, { marginLeft: 8 }]}>
                     {company.address}
                   </Text>
                 </View>
@@ -222,7 +231,9 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
           <View style={styles.offeringCard}>
             <View style={styles.cardHeader}>
               <Ionicons name="gift" size={24} color={Colors.mainColor} />
-              <Text style={styles.cardTitle}>Company Offering</Text>
+              <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+                Company Offering
+              </Text>
             </View>
 
             {loadingOffering ? (
@@ -260,7 +271,9 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                         size={18}
                         color={Colors.mainColor}
                       />
-                      <Text style={styles.priceText}>{offering.price}</Text>
+                      <Text style={[styles.priceText, { marginLeft: 8 }]}>
+                        {offering.price}
+                      </Text>
                     </View>
                   </View>
                 )}

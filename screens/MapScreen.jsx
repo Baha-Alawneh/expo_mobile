@@ -83,7 +83,9 @@ const MapScreen = ({ studentProject, studentBooth }) => {
           </View>
           <TouchableOpacity style={styles.navigateButton}>
             <Ionicons name="navigate" size={20} color="#fff" />
-            <Text style={styles.navigateButtonText}>Navigate</Text>
+            <Text style={[styles.navigateButtonText, { marginLeft: 8 }]}>
+              Navigate
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

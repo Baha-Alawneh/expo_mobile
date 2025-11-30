@@ -148,7 +148,9 @@ const CompaniesScreen = ({ navigation }) => {
                       size={14}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.boothText}>Booth {item.booth_id}</Text>
+                    <Text style={[styles.boothText, { marginLeft: 8 }]}>
+                      Booth {item.booth_id}
+                    </Text>
                   </View>
                 )}
                 <Ionicons

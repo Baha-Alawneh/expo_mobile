@@ -74,11 +74,11 @@ export const loginUser = async (body, navigation) => {
 
       // Navigate based on role
       if (role === "visitor") {
-        navigation.navigate("VisitorScreen");
+        navigation.navigate("Visitor");
       } else if (role === "student") {
         navigation.navigate("Student");
       } else if (role === "company") {
-        navigation.navigate("CompanyScreen");
+        navigation.navigate("Company");
       }
 
       return {

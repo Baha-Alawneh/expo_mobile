@@ -201,7 +201,7 @@ const OtherProjectsScreen = ({ navigation }) => {
                       size={14}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.boothText}>
+                    <Text style={[styles.boothText, { marginLeft: 8 }]}>
                       {"Booth - " + (item.booth || "TBA")}
                     </Text>
                   </View>
