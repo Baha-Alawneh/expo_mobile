@@ -440,7 +440,6 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
@@ -470,7 +469,6 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
   },
   infoValueWithIcon: {
     flex: 1,
@@ -484,7 +482,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F4FF",
     padding: 12,
     borderRadius: 12,
-    gap: 10,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },
@@ -502,7 +499,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     alignSelf: "flex-start",
-    gap: 8,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },
@@ -557,7 +553,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     alignSelf: "flex-start",
-    gap: 8,
     borderWidth: 1,
     borderColor: "#FFB74D",
   },

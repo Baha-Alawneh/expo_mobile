@@ -360,7 +360,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     marginBottom: 40,
-    gap: 8,
   },
   codeInput: {
     flex: 1,

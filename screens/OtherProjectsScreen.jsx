@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
   projectFooter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   boothInfo: {
     flexDirection: "row",
@@ -313,7 +312,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    gap: 4,
   },
   boothText: {
     fontSize: 12,

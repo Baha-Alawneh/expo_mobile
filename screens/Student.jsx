@@ -940,7 +940,6 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: "row",
-    gap: 12,
   },
   iconButton: {
     position: "relative",
@@ -983,7 +982,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     marginHorizontal: 5,
-    gap: 6,
     backgroundColor: "#F0F4FF",
   },
   activeTab: {
@@ -1079,7 +1077,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
-    gap: 10,
   },
   cardTitle: {
     fontSize: 18,
@@ -1095,7 +1092,6 @@ const styles = StyleSheet.create({
   boothTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
   },
   boothText: {
     fontSize: 14,
@@ -1105,7 +1101,6 @@ const styles = StyleSheet.create({
   skillsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
   },
   skillChip: {
     backgroundColor: "#E3F2FD",
@@ -1147,7 +1142,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginHorizontal: 20,
-    gap: 10,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },
@@ -1166,7 +1160,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginTop: 10,
     marginBottom: Platform.OS === "ios" ? 40 : 20,
-    gap: 8,
     elevation: 3,
     shadowColor: Colors.mainColor,
     shadowOffset: { width: 0, height: 4 },
@@ -1208,7 +1201,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#F5F5F5",
-    gap: 12,
     alignItems: "flex-start",
   },
   unreadNotification: {
@@ -1323,7 +1315,6 @@ const styles = StyleSheet.create({
   skillsList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
     marginBottom: 15,
   },
   skillItemWithRemove: {
@@ -1334,7 +1325,6 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingVertical: 8,
     borderRadius: 20,
-    gap: 8,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },
@@ -1346,7 +1336,6 @@ const styles = StyleSheet.create({
   addSkillContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
   },
   skillInput: {
     flex: 1,
@@ -1400,7 +1389,6 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
-    gap: 6,
   },
   editProjectHintText: {
     color: Colors.mainColor,
@@ -1414,7 +1402,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    gap: 6,
   },
   addProjectText: {
     color: "#fff",
@@ -1448,7 +1435,6 @@ const styles = StyleSheet.create({
   projectStatusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
   statusDot: {
     width: 10,
@@ -1483,7 +1469,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignSelf: "flex-start",
     marginBottom: 10,
-    gap: 6,
   },
   demoButtonText: {
     color: Colors.mainColor,
@@ -1497,7 +1482,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginHorizontal: 20,
-    gap: 10,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },
@@ -1560,7 +1544,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#F5F5F5",
-    gap: 12,
     alignItems: "flex-start",
   },
   unreadNotification: {
@@ -1617,7 +1600,6 @@ const styles = StyleSheet.create({
   modernProjectTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     marginBottom: 12,
   },
   modernProjectTitle: {
@@ -1629,7 +1611,6 @@ const styles = StyleSheet.create({
   modernStatusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -1648,7 +1629,6 @@ const styles = StyleSheet.create({
   modernSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     marginBottom: 12,
   },
   modernSectionTitle: {
@@ -1691,7 +1671,6 @@ const styles = StyleSheet.create({
   },
   modernLinksContainer: {
     paddingLeft: 28,
-    gap: 12,
   },
   modernLinkButton: {
     flexDirection: "row",
@@ -1699,7 +1678,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 12,
-    gap: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
@@ -1731,7 +1709,6 @@ const styles = StyleSheet.create({
   },
   modernTeamContainer: {
     paddingLeft: 28,
-    gap: 10,
   },
   modernMemberCard: {
     flexDirection: "row",
@@ -1739,7 +1716,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 12,
-    gap: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
@@ -1771,7 +1747,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 14,
     borderRadius: 12,
-    gap: 8,
     marginTop: 10,
     elevation: 3,
     shadowColor: Colors.mainColor,

@@ -813,7 +813,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    gap: 6,
   },
   addProjectText: {
     color: "#fff",
@@ -853,7 +852,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 25,
-    gap: 8,
     elevation: 3,
     shadowColor: Colors.mainColor,
     shadowOffset: { width: 0, height: 4 },
@@ -919,7 +917,6 @@ const styles = StyleSheet.create({
   modernProjectTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     marginBottom: 12,
   },
   modernProjectTitle: {
@@ -931,7 +928,6 @@ const styles = StyleSheet.create({
   modernStatusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -950,7 +946,6 @@ const styles = StyleSheet.create({
   modernSectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     marginBottom: 12,
   },
   modernSectionTitle: {
@@ -966,7 +961,6 @@ const styles = StyleSheet.create({
   },
   modernTeamContainer: {
     paddingLeft: 28,
-    gap: 10,
   },
   modernMemberCard: {
     flexDirection: "row",
@@ -974,7 +968,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 12,
-    gap: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
@@ -1043,7 +1036,6 @@ const styles = StyleSheet.create({
   },
   modernLinksContainer: {
     paddingLeft: 28,
-    gap: 12,
   },
   modernLinkButton: {
     flexDirection: "row",
@@ -1051,7 +1043,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 12,
-    gap: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
@@ -1088,7 +1079,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 14,
     borderRadius: 12,
-    gap: 8,
     marginTop: 10,
     elevation: 3,
     shadowColor: Colors.mainColor,
@@ -1155,7 +1145,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginHorizontal: 20,
-    gap: 10,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },

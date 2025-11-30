@@ -791,7 +791,6 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: "row",
-    gap: 12,
   },
   iconButton: {
     position: "relative",
@@ -838,7 +837,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     marginHorizontal: 5,
-    gap: 6,
     backgroundColor: "#F0F4FF",
   },
   activeTab: {
@@ -912,7 +910,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
-    gap: 10,
   },
   cardTitle: {
     fontSize: 18,
@@ -922,7 +919,6 @@ const styles = StyleSheet.create({
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
     marginBottom: 10,
   },
   contactText: {
@@ -953,7 +949,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginTop: 10,
     marginBottom: Platform.OS === "ios" ? 40 : 20,
-    gap: 8,
     elevation: 3,
     shadowColor: Colors.mainColor,
     shadowOffset: { width: 0, height: 4 },
@@ -995,7 +990,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#F5F5F5",
-    gap: 12,
     alignItems: "flex-start",
   },
   unreadNotification: {
