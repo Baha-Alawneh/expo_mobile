@@ -203,7 +203,9 @@ const MyOfferingScreen = ({ navigation }) => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="pricetag-outline" size={80} color="#ccc" />
-      <Text style={styles.emptyStateText}>No offering found</Text>
+      <Text style={[styles.emptyStateText, { marginTop: 16 }]}>
+        No offering found
+      </Text>
       <Text style={styles.emptyStateSubtext}>
         Add your company offering to showcase your services or products
       </Text>
@@ -221,7 +223,9 @@ const MyOfferingScreen = ({ navigation }) => {
         }}
       >
         <Ionicons name="add-circle" size={24} color="#fff" />
-        <Text style={styles.addOfferingButtonLargeText}>Add Offering</Text>
+        <Text style={[styles.addOfferingButtonLargeText, { marginLeft: 8 }]}>
+          Add Offering
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -229,7 +233,9 @@ const MyOfferingScreen = ({ navigation }) => {
   const renderErrorState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="alert-circle-outline" size={80} color="#ff6b6b" />
-      <Text style={styles.emptyStateText}>Error loading offering</Text>
+      <Text style={[styles.emptyStateText, { marginTop: 16 }]}>
+        Error loading offering
+      </Text>
       <Text style={styles.emptyStateSubtext}>{error}</Text>
       <TouchableOpacity style={styles.retryButton} onPress={fetchMyOffering}>
         <Text style={styles.retryButtonText}>Retry</Text>
@@ -314,7 +320,9 @@ const MyOfferingScreen = ({ navigation }) => {
                 }}
               >
                 <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addOfferingText}>Add Offering</Text>
+                <Text style={[styles.addOfferingText, { marginLeft: 8 }]}>
+                  Add Offering
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -331,14 +339,16 @@ const MyOfferingScreen = ({ navigation }) => {
                     size={28}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.modernOfferingTitle}>
+                  <Text style={[styles.modernOfferingTitle, { marginLeft: 8 }]}>
                     {myOffering.name}
                   </Text>
                 </View>
                 {myOffering.price && (
                   <View style={styles.priceBadge}>
                     <Ionicons name="cash" size={20} color={Colors.mainColor} />
-                    <Text style={styles.priceText}>{myOffering.price}</Text>
+                    <Text style={[styles.priceText, { marginLeft: 8 }]}>
+                      {myOffering.price}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -352,7 +362,11 @@ const MyOfferingScreen = ({ navigation }) => {
                       size={20}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.modernSectionTitle}>Description</Text>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
+                      Description
+                    </Text>
                   </View>
                   <Text style={styles.modernOfferingDescription}>
                     {myOffering.description}
@@ -369,7 +383,9 @@ const MyOfferingScreen = ({ navigation }) => {
                       size={20}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.modernSectionTitle}>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
                       Gallery ({myOffering.offering_photos.length})
                     </Text>
                   </View>
@@ -404,7 +420,9 @@ const MyOfferingScreen = ({ navigation }) => {
                 onPress={editOffering}
               >
                 <Ionicons name="create" size={20} color="#fff" />
-                <Text style={styles.modernEditButtonText}>Edit Offering</Text>
+                <Text style={[styles.modernEditButtonText, { marginLeft: 8 }]}>
+                  Edit Offering
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -480,7 +498,7 @@ const MyOfferingScreen = ({ navigation }) => {
                     size={24}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.uploadImageText}>
+                  <Text style={[styles.uploadImageText, { marginLeft: 8 }]}>
                     {offeringData.offering_photos?.length > 0
                       ? `${offeringData.offering_photos.length} image(s) selected`
                       : "Select Multiple Images"}

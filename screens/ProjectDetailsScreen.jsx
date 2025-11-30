@@ -90,7 +90,9 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
             <View style={styles.modernProjectHeader}>
               <View style={styles.modernProjectTitleContainer}>
                 <Ionicons name="cube" size={28} color={Colors.mainColor} />
-                <Text style={styles.modernProjectTitle}>{project.title}</Text>
+                <Text style={[styles.modernProjectTitle, { marginLeft: 8 }]}>
+                  {project.title}
+                </Text>
               </View>
               <View
                 style={[
@@ -108,7 +110,10 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                 <Text
                   style={[
                     styles.modernStatusText,
-                    { color: getStatusInfo(project.status).color },
+                    {
+                      color: getStatusInfo(project.status).color,
+                      marginLeft: 8,
+                    },
                   ]}
                 >
                   {getStatusInfo(project.status).text}
@@ -125,7 +130,9 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                     size={20}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.modernSectionTitle}>Description</Text>
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                    Description
+                  </Text>
                 </View>
                 <Text style={styles.modernProjectDescription}>
                   {project.description}
@@ -138,7 +145,7 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
               <View style={styles.modernProjectSection}>
                 <View style={styles.modernSectionHeader}>
                   <Ionicons name="people" size={20} color={Colors.mainColor} />
-                  <Text style={styles.modernSectionTitle}>
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
                     Team Members ({project.students.length})
                   </Text>
                 </View>
@@ -195,7 +202,9 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                     size={20}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.modernSectionTitle}>Booth Location</Text>
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                    Booth Location
+                  </Text>
                 </View>
                 <View style={styles.boothBadge}>
                   <Text style={styles.boothBadgeText}>{project.booth}</Text>
@@ -208,7 +217,7 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
               <View style={styles.modernProjectSection}>
                 <View style={styles.modernSectionHeader}>
                   <Ionicons name="images" size={20} color={Colors.mainColor} />
-                  <Text style={styles.modernSectionTitle}>
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
                     Gallery ({project.project_photos.length})
                   </Text>
                 </View>
@@ -240,7 +249,9 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
               <View style={styles.modernProjectSection}>
                 <View style={styles.modernSectionHeader}>
                   <Ionicons name="link" size={20} color={Colors.mainColor} />
-                  <Text style={styles.modernSectionTitle}>Project Links</Text>
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                    Project Links
+                  </Text>
                 </View>
                 <View style={styles.modernLinksContainer}>
                   {project.video_url && (

@@ -7,6 +7,7 @@ import Login from "../screens/Login";
 import Verify from "../screens/Verify";
 import Student from "../screens/Student";
 import Company from "../screens/Company";
+import Visitor from "../screens/Visitor";
 import MyProjectScreen from "../screens/MyProjectScreen";
 import MyOfferingScreen from "../screens/MyOfferingScreen";
 import ProjectDetailsScreen from "../screens/ProjectDetailsScreen";
@@ -46,6 +47,11 @@ export default function App() {
           <Stack.Screen
             name="Company"
             component={Company}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Visitor"
+            component={Visitor}
             options={{ headerShown: false }}
           />
           <Stack.Screen

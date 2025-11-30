@@ -164,7 +164,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
               }}
             >
               <Ionicons name="refresh" size={20} color={Colors.mainColor} />
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={[styles.retryText, { marginLeft: 8 }]}>Retry</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -219,7 +219,9 @@ const StudentDetailsScreen = ({ navigation, route }) => {
                   size={24}
                   color={Colors.mainColor}
                 />
-                <Text style={styles.cardTitle}>Project</Text>
+                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+                  Project
+                </Text>
               </View>
               <Text style={styles.projectTitle}>
                 {studentData.project.title}
@@ -231,7 +233,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
                     size={16}
                     color={Colors.mainColor}
                   />
-                  <Text style={styles.boothText}>
+                  <Text style={[styles.boothText, { marginLeft: 8 }]}>
                     {studentData.project.booth}
                   </Text>
                 </View>
@@ -248,7 +250,9 @@ const StudentDetailsScreen = ({ navigation, route }) => {
                   size={24}
                   color={Colors.mainColor}
                 />
-                <Text style={styles.cardTitle}>Skills</Text>
+                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+                  Skills
+                </Text>
               </View>
               <View style={styles.skillsContainer}>
                 {studentData.skills.map((skill, index) => (
@@ -269,7 +273,9 @@ const StudentDetailsScreen = ({ navigation, route }) => {
                   size={24}
                   color={Colors.mainColor}
                 />
-                <Text style={styles.cardTitle}>About Me</Text>
+                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+                  About Me
+                </Text>
               </View>
               <Text style={styles.bioText}>{studentData.bio}</Text>
             </View>
@@ -283,7 +289,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
                 size={24}
                 color={Colors.mainColor}
               />
-              <Text style={styles.cardTitle}>Resume</Text>
+              <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Resume</Text>
             </View>
             <TouchableOpacity
               style={[
@@ -294,9 +300,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
               disabled={!studentData.cv_url}
             >
               <Ionicons
-                name={
-                  studentData.cv_url ? "download-outline" : "document-outline"
-                }
+                name="download-outline"
                 size={20}
                 color={studentData.cv_url ? Colors.mainColor : "#999"}
               />
@@ -304,6 +308,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
                 style={[
                   styles.cvButtonText,
                   !studentData.cv_url && styles.cvButtonTextDisabled,
+                  { marginLeft: 8 },
                 ]}
               >
                 {studentData.cv_url ? `Download Resume` : "No resume uploaded"}

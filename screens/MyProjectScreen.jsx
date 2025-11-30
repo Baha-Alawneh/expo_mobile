@@ -274,7 +274,9 @@ const MyProjectScreen = ({ navigation }) => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="cube-outline" size={80} color="#ccc" />
-      <Text style={styles.emptyStateText}>No project found</Text>
+      <Text style={[styles.emptyStateText, { marginTop: 16 }]}>
+        No project found
+      </Text>
       <Text style={styles.emptyStateSubtext}>
         Add your booth project to showcase your work
       </Text>
@@ -294,7 +296,9 @@ const MyProjectScreen = ({ navigation }) => {
         }}
       >
         <Ionicons name="add-circle" size={24} color="#fff" />
-        <Text style={styles.addProjectButtonLargeText}>Add Project</Text>
+        <Text style={[styles.addProjectButtonLargeText, { marginLeft: 8 }]}>
+          Add Project
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -302,7 +306,9 @@ const MyProjectScreen = ({ navigation }) => {
   const renderErrorState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="alert-circle-outline" size={80} color="#ff6b6b" />
-      <Text style={styles.emptyStateText}>Error loading project</Text>
+      <Text style={[styles.emptyStateText, { marginTop: 16 }]}>
+        Error loading project
+      </Text>
       <Text style={styles.emptyStateSubtext}>{error}</Text>
       <TouchableOpacity style={styles.retryButton} onPress={fetchMyProject}>
         <Text style={styles.retryButtonText}>Retry</Text>
@@ -389,7 +395,9 @@ const MyProjectScreen = ({ navigation }) => {
                 }}
               >
                 <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addProjectText}>Add Project</Text>
+                <Text style={[styles.addProjectText, { marginLeft: 8 }]}>
+                  Add Project
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -402,7 +410,7 @@ const MyProjectScreen = ({ navigation }) => {
               <View style={styles.modernProjectHeader}>
                 <View style={styles.modernProjectTitleContainer}>
                   <Ionicons name="cube" size={28} color={Colors.mainColor} />
-                  <Text style={styles.modernProjectTitle}>
+                  <Text style={[styles.modernProjectTitle, { marginLeft: 8 }]}>
                     {myProject.title}
                   </Text>
                 </View>
@@ -424,6 +432,7 @@ const MyProjectScreen = ({ navigation }) => {
                     style={[
                       styles.modernStatusText,
                       { color: getStatusInfo(myProject.status).color },
+                      { marginLeft: 8 },
                     ]}
                   >
                     {getStatusInfo(myProject.status).text}
@@ -440,7 +449,11 @@ const MyProjectScreen = ({ navigation }) => {
                       size={20}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.modernSectionTitle}>Description</Text>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
+                      Description
+                    </Text>
                   </View>
                   <Text style={styles.modernProjectDescription}>
                     {myProject.description}
@@ -457,7 +470,9 @@ const MyProjectScreen = ({ navigation }) => {
                       size={20}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.modernSectionTitle}>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
                       Team Members ({myProject.students.length})
                     </Text>
                   </View>
@@ -501,7 +516,9 @@ const MyProjectScreen = ({ navigation }) => {
                       size={20}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.modernSectionTitle}>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
                       Booth Location
                     </Text>
                   </View>
@@ -520,7 +537,9 @@ const MyProjectScreen = ({ navigation }) => {
                       size={20}
                       color={Colors.mainColor}
                     />
-                    <Text style={styles.modernSectionTitle}>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
                       Gallery ({myProject.project_photos.length})
                     </Text>
                   </View>
@@ -554,7 +573,11 @@ const MyProjectScreen = ({ navigation }) => {
                 <View style={styles.modernProjectSection}>
                   <View style={styles.modernSectionHeader}>
                     <Ionicons name="link" size={20} color={Colors.mainColor} />
-                    <Text style={styles.modernSectionTitle}>Project Links</Text>
+                    <Text
+                      style={[styles.modernSectionTitle, { marginLeft: 8 }]}
+                    >
+                      Project Links
+                    </Text>
                   </View>
                   <View style={styles.modernLinksContainer}>
                     {myProject.video_url && (
@@ -607,7 +630,9 @@ const MyProjectScreen = ({ navigation }) => {
                 onPress={editProject}
               >
                 <Ionicons name="create" size={20} color="#fff" />
-                <Text style={styles.modernEditButtonText}>Edit Project</Text>
+                <Text style={[styles.modernEditButtonText, { marginLeft: 8 }]}>
+                  Edit Project
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (

@@ -179,17 +179,19 @@ const Company = ({ navigation }) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="call-outline" size={24} color={Colors.mainColor} />
-          <Text style={styles.cardTitle}>Contact Information</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+            Contact Information
+          </Text>
         </View>
         <View style={styles.contactRow}>
           <Ionicons name="mail" size={18} color={Colors.mainColor} />
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { marginLeft: 8 }]}>
             {companyData.email || "Not set"}
           </Text>
         </View>
         <View style={styles.contactRow}>
           <Ionicons name="call" size={18} color={Colors.mainColor} />
-          <Text style={styles.contactText}>
+          <Text style={[styles.contactText, { marginLeft: 8 }]}>
             {companyData.phone || "Not set"}
           </Text>
         </View>
@@ -203,7 +205,7 @@ const Company = ({ navigation }) => {
             size={24}
             color={Colors.mainColor}
           />
-          <Text style={styles.cardTitle}>Address</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Address</Text>
         </View>
         <Text style={styles.addressText}>
           {companyData.address || "Not set"}
@@ -218,7 +220,9 @@ const Company = ({ navigation }) => {
             size={24}
             color={Colors.mainColor}
           />
-          <Text style={styles.cardTitle}>About Company</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+            About Company
+          </Text>
         </View>
         <Text style={styles.bioText}>
           {companyData.description || "No description"}
@@ -233,7 +237,7 @@ const Company = ({ navigation }) => {
             size={24}
             color={Colors.mainColor}
           />
-          <Text style={styles.cardTitle}>Category</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Category</Text>
         </View>
         <Text style={styles.addressText}>
           {companyData.category || "Not set"}
@@ -244,7 +248,7 @@ const Company = ({ navigation }) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="globe-outline" size={24} color={Colors.mainColor} />
-          <Text style={styles.cardTitle}>Website</Text>
+          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Website</Text>
         </View>
         <Text style={[styles.addressText, styles.linkText]}>
           {companyData.website_url || "Not set"}
@@ -256,7 +260,9 @@ const Company = ({ navigation }) => {
         onPress={() => setShowEditProfile(true)}
       >
         <Ionicons name="create-outline" size={20} color="#fff" />
-        <Text style={styles.editButtonText}>Edit Profile</Text>
+        <Text style={[styles.editButtonText, { marginLeft: 8 }]}>
+          Edit Profile
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -470,6 +476,7 @@ const Company = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "profile" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Profile
@@ -485,7 +492,9 @@ const Company = ({ navigation }) => {
                 size={20}
                 color={Colors.mainColor}
               />
-              <Text style={styles.tabText}>My Offering</Text>
+              <Text style={[styles.tabText, { marginLeft: 8 }]}>
+                My Offering
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -503,6 +512,7 @@ const Company = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "projects" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Projects
@@ -525,6 +535,7 @@ const Company = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "companies" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Other Companies
@@ -544,6 +555,7 @@ const Company = ({ navigation }) => {
                 style={[
                   styles.tabText,
                   activeTab === "map" && styles.activeTabText,
+                  { marginLeft: 8 },
                 ]}
               >
                 Map
