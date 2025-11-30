@@ -144,12 +144,25 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                 </View>
                 <View style={styles.modernTeamContainer}>
                   {project.students.map((student, index) => (
-                    <View
+                    <TouchableOpacity
                       key={student.student_id || index}
                       style={styles.modernMemberCard}
+                      onPress={() => {
+                        // Navigate to student details screen with email only
+                        navigation.navigate("StudentDetailsScreen", {
+                          email: student.email,
+                        });
+                      }}
                     >
                       <View style={styles.modernMemberAvatar}>
-                        <Ionicons name="person" size={24} color="#fff" />
+                        {student.photo_url ? (
+                          <Image
+                            source={{ uri: student.photo_url }}
+                            style={styles.memberAvatarImage}
+                          />
+                        ) : (
+                          <Ionicons name="person" size={24} color="#fff" />
+                        )}
                       </View>
                       <View style={styles.modernMemberInfo}>
                         <Text style={styles.modernMemberName}>
@@ -163,11 +176,11 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                         </Text>
                       </View>
                       <Ionicons
-                        name="checkmark-circle"
+                        name="chevron-forward"
                         size={20}
-                        color="#4CAF50"
+                        color={Colors.mainColor}
                       />
-                    </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>
@@ -403,6 +416,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.mainColor,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+  },
+  memberAvatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   modernMemberInfo: {
     flex: 1,

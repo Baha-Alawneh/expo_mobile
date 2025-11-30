@@ -127,16 +127,15 @@ const MyProjectScreen = ({ navigation }) => {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
       allowsEditing: false,
       quality: 0.8,
-      selectionLimit: 10,
     });
 
     if (!result.canceled && result.assets) {
+      const newPhotos = result.assets || [result];
       setProjectData((prev) => ({
         ...prev,
-        project_photos: [...(prev.project_photos || []), ...result.assets],
+        project_photos: [...(prev.project_photos || []), ...newPhotos],
       }));
     }
   };
