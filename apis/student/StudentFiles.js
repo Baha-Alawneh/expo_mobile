@@ -1,4 +1,5 @@
 import { BASE_URL } from "../../constants/config";
+import { getAuthToken } from "../../utils/auth";
 
 /**
  * Upload student profile photo and/or CV
@@ -10,20 +11,22 @@ import { BASE_URL } from "../../constants/config";
  */
 export const uploadStudentFiles = async (userId, files) => {
   try {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("No authentication token found. Please login again.");
+    }
+
     const formData = new FormData();
 
     if (files.photo) {
       const photoUri = files.photo.uri;
-      // Extract filename from URI or generate a new one
       const uriParts = photoUri.split("/");
       const fileName = uriParts[uriParts.length - 1];
       const photoName =
         files.photo.fileName || fileName || `photo_${Date.now()}.jpg`;
 
-      // Determine the correct file type
       let photoType = files.photo.type || files.photo.mimeType || "image/jpeg";
       if (!photoType.startsWith("image/")) {
-        // Infer type from filename
         if (photoName.toLowerCase().endsWith(".png")) {
           photoType = "image/png";
         } else if (
@@ -32,7 +35,7 @@ export const uploadStudentFiles = async (userId, files) => {
         ) {
           photoType = "image/jpeg";
         } else {
-          photoType = "image/jpeg"; // default
+          photoType = "image/jpeg";
         }
       }
 
@@ -67,34 +70,17 @@ export const uploadStudentFiles = async (userId, files) => {
 
     const uploadUrl = `${BASE_URL}/students/profile/${userId}/upload`;
     console.log("Uploading to:", uploadUrl);
-    console.log("BASE_URL:", BASE_URL);
-
-    // Test server connectivity first
-    try {
-      const testResponse = await fetch(BASE_URL, {
-        method: "GET",
-        timeout: 5000,
-      });
-      console.log("Server is reachable:", testResponse.ok);
-    } catch (testError) {
-      console.error("Server connectivity test failed:", testError);
-      throw new Error(
-        "Cannot connect to server. Please make sure the backend is running and reachable at " +
-          BASE_URL
-      );
-    }
 
     const response = await fetch(uploadUrl, {
       method: "POST",
       body: formData,
       headers: {
+        Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
-      // Do NOT set Content-Type header - let fetch set it automatically with boundary
     });
 
     console.log("Response status:", response.status);
-    console.log("Response headers:", response.headers);
 
     const responseText = await response.text();
     console.log("Response text:", responseText);
@@ -111,7 +97,12 @@ export const uploadStudentFiles = async (userId, files) => {
 
     console.log("Response data:", result);
 
-    if (!response.ok) {
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+
+    if (!response.ok || !result.success) {
       throw new Error(result.message || "Upload failed");
     }
 
@@ -134,10 +125,26 @@ export const uploadStudentFiles = async (userId, files) => {
  */
 export const getStudentProfile = async (userId) => {
   try {
-    const response = await fetch(`${BASE_URL}/students/profile/${userId}`);
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("No authentication token found. Please login again.");
+    }
+
+    const response = await fetch(`${BASE_URL}/students/profile/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
     const result = await response.json();
 
-    if (!response.ok) {
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+
+    if (!response.ok || !result.success) {
       throw new Error(result.message || "Failed to fetch profile");
     }
 
@@ -156,11 +163,17 @@ export const getStudentProfile = async (userId) => {
  */
 export const deleteStudentFile = async (userId, fileType) => {
   try {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("No authentication token found. Please login again.");
+    }
+
     const response = await fetch(
       `${BASE_URL}/students/profile/${userId}/file`,
       {
         method: "DELETE",
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ fileType }),
@@ -169,7 +182,12 @@ export const deleteStudentFile = async (userId, fileType) => {
 
     const result = await response.json();
 
-    if (!response.ok) {
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+
+    if (!response.ok || !result.success) {
       throw new Error(result.message || "Delete failed");
     }
 

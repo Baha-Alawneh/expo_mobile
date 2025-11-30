@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  FlatList,
   Modal,
   TextInput,
   StatusBar,
@@ -18,35 +17,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import ProjectsScreen from "./ProjectsScreen";
+import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
 import MapScreen from "./MapScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getStudentData, postStudentData } from "../apis/student/Student";
-import {
-  getProject,
-  createProject,
-  updateProject,
-} from "../apis/project/Project";
 import { uploadStudentFiles } from "../apis/student/StudentFiles";
 import { BASE_URL } from "../constants/config";
 
-const Student = () => {
+const Student = ({ navigation }) => {
   // States
   const [activeTab, setActiveTab] = useState("profile");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [showAddProject, setShowAddProject] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
   const [newSkill, setNewSkill] = useState("");
-  const [editingProject, setEditingProject] = useState(false);
-  const [projectData, setProjectData] = useState({
-    title: "",
-    description: "",
-    demoLink: "",
-    images: [],
-    booth: "",
-  });
 
   // Helper function to get status color and text
   const getStatusInfo = (status) => {
@@ -75,16 +60,6 @@ const Student = () => {
       title: "",
       booth: "A-12",
     },
-  });
-
-  // Mock project data (single project)
-  const [myProject, setMyProject] = useState({
-    title: "",
-    description: "",
-    demoLink: "",
-    images: [],
-    status: "",
-    booth: "",
   });
 
   // Mock notifications
@@ -152,30 +127,15 @@ const Student = () => {
           return;
         }
 
-        console.log("=== Photo Upload Debug ===");
-        console.log("User ID:", userId);
-        console.log("Photo URI:", selectedImage.uri);
-        console.log("Photo width:", selectedImage.width);
-        console.log("Photo height:", selectedImage.height);
-        console.log("Photo file size:", selectedImage.fileSize);
-        console.log(
-          "API URL:",
-          `${BASE_URL}/students/profile/${userId}/upload`
-        );
-        console.log("BASE_URL:", BASE_URL);
-        console.log("========================");
-
         // Show loading alert
         Alert.alert("Uploading", "Please wait, uploading your photo...", [
-          { text: "Cancel", onPress: () => console.log("Upload cancelled") },
+          { text: "Cancel", onPress: () => {} },
         ]);
 
         // Upload to S3 immediately
         const uploadResult = await uploadStudentFiles(userId, {
           photo: selectedImage,
         });
-
-        console.log("Upload result:", uploadResult);
 
         if (uploadResult.success) {
           // Update state with S3 URL
@@ -194,8 +154,6 @@ const Student = () => {
           );
         }
       } catch (error) {
-        console.error("Error uploading photo:", error);
-
         let errorMessage = "Failed to upload photo";
 
         // Check for specific error types
@@ -253,7 +211,6 @@ const Student = () => {
             Alert.alert("Error", uploadResult.message || "Failed to upload CV");
           }
         } catch (error) {
-          console.error("Error uploading CV:", error);
           Alert.alert("Error", "Failed to upload CV: " + error.message);
         }
       }
@@ -294,7 +251,6 @@ const Student = () => {
       }
     } catch (error) {
       Alert.alert("Error", "Failed to download CV");
-      console.error("CV download error:", error);
     }
   };
 
@@ -314,205 +270,6 @@ const Student = () => {
       skills: prev.skills.filter((_, i) => i !== index),
     }));
   };
-
-  const pickProjectImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission denied",
-        "Sorry, we need camera roll permissions to make this work!"
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setProjectData((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), result.assets[0].uri],
-      }));
-    }
-  };
-
-  const saveProject = async () => {
-    if (!projectData.title.trim()) {
-      Alert.alert("Error", "Please enter a project title");
-      return;
-    }
-
-    try {
-      const userId = await AsyncStorage.getItem("userId");
-
-      const projectPayload = {
-        title: projectData.title.trim(),
-        description: projectData.description.trim(),
-        demoLink: projectData.demoLink.trim(),
-        // ensure images is always an array when sending to backend
-        images: Array.isArray(projectData.images) ? projectData.images : [],
-        booth: projectData.booth || myProject?.booth || "",
-      };
-
-      let result;
-      if (editingProject && myProject) {
-        // Update existing project
-        result = await updateProject(userId, projectPayload);
-      } else {
-        // Create new project
-        result = await createProject(userId, projectPayload);
-      }
-
-      if (result.success) {
-        setMyProject(result.data);
-        setProjectData({
-          title: "",
-          description: "",
-          demoLink: "",
-          images: [],
-          booth: "",
-        });
-        setShowAddProject(false);
-        setEditingProject(false);
-        Alert.alert(
-          "Success",
-          editingProject
-            ? "Project updated successfully!"
-            : "Project added successfully!"
-        );
-        // Refresh project data
-        await fetchMyProject();
-      } else {
-        Alert.alert("Error", result.message || "Failed to save project");
-      }
-    } catch (error) {
-      console.error("Error saving project:", error);
-      Alert.alert("Error", "Failed to save project");
-    }
-  };
-
-  const editProject = () => {
-    if (myProject) {
-      setProjectData({
-        title: myProject.title || "",
-        description: myProject.description || "",
-        demoLink: myProject.demoLink || "",
-        images: myProject.images || [],
-        booth: myProject.booth || "",
-      });
-      setEditingProject(true);
-      setShowAddProject(true);
-    }
-  };
-
-  const renderMyProjectSection = () => (
-    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>My Project</Text>
-        {!myProject && (
-          <TouchableOpacity
-            style={styles.addProjectButton}
-            onPress={() => {
-              setEditingProject(false);
-              setProjectData({
-                title: "",
-                description: "",
-                demoLink: "",
-                images: [],
-                booth: "",
-              });
-              setShowAddProject(true);
-            }}
-          >
-            <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.addProjectText}>Add Project</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {myProject ? (
-        <TouchableOpacity style={styles.projectCard} onPress={editProject}>
-          <View style={styles.projectCardHeader}>
-            <Text style={styles.projectCardTitle}>{myProject.title}</Text>
-            <View style={styles.projectStatusContainer}>
-              <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: getStatusInfo(myProject.status).color },
-                ]}
-              />
-              <Text
-                style={[
-                  styles.projectStatusText,
-                  { color: getStatusInfo(myProject.status).color },
-                ]}
-              >
-                {getStatusInfo(myProject.status).text}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.projectCardDescription}>
-            {myProject.description}
-          </Text>
-
-          {myProject.images?.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.projectImagesContainer}
-            >
-              {myProject.images.map((image, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: image }}
-                  style={styles.projectImage}
-                />
-              ))}
-            </ScrollView>
-          )}
-
-          {myProject.demoLink ? (
-            <View style={styles.demoButton}>
-              <Ionicons
-                name="link-outline"
-                size={16}
-                color={Colors.mainColor}
-              />
-              <Text style={styles.demoButtonText}>View Demo</Text>
-            </View>
-          ) : null}
-
-          {myProject.booth && (
-            <View style={styles.boothTag}>
-              <Ionicons name="location" size={16} color={Colors.mainColor} />
-              <Text style={styles.boothText}>Booth {myProject.booth}</Text>
-            </View>
-          )}
-
-          <View style={styles.editProjectHint}>
-            <Ionicons
-              name="create-outline"
-              size={16}
-              color={Colors.mainColor}
-            />
-            <Text style={styles.editProjectHintText}>Tap to edit</Text>
-          </View>
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.emptyProjectCard}>
-          <Ionicons name="cube-outline" size={60} color="#CCC" />
-          <Text style={styles.emptyProjectText}>No project added yet</Text>
-          <Text style={styles.emptyProjectSubtext}>
-            Add your booth project to showcase your work
-          </Text>
-        </View>
-      )}
-    </ScrollView>
-  );
 
   const renderProfileSection = () => (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
@@ -537,13 +294,9 @@ const Student = () => {
           <Ionicons name="cube-outline" size={24} color={Colors.mainColor} />
           <Text style={styles.cardTitle}>My Project</Text>
         </View>
-        <Text style={styles.projectTitle}>{studentData.project.title}</Text>
-        <View style={styles.boothTag}>
-          <Ionicons name="location" size={16} color={Colors.mainColor} />
-          <Text style={styles.boothText}>
-            Booth {studentData.project.booth}
-          </Text>
-        </View>
+        <Text style={styles.projectTitle}>
+          {studentData.project?.title || "No project"}
+        </Text>
       </View>
 
       {/* Skills Card */}
@@ -623,63 +376,52 @@ const Student = () => {
   const handleFetchStudentData = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
+
+      if (!userId) {
+        Alert.alert("Error", "User ID not found. Please login again.");
+        return;
+      }
+
       const result = await getStudentData(userId);
-      console.log("Fetched student data:", result.data.data); // Debug log
-      if (result.success) {
-        const fetchedData = result.data.data;
+
+      // Handle unauthorized (401) error
+      if (result.unauthorized) {
+        Alert.alert("Session Expired", "Please login again.");
+        // TODO: Navigate to login screen
+        return;
+      }
+
+      if (result.success && result.data) {
+        const fetchedData = result.data;
         setStudentData((prev) => ({
           ...prev,
-          ...fetchedData,
-          // Use photo_url from S3 if available, otherwise keep current
+          name: fetchedData.name || prev.name,
+          email: fetchedData.email || prev.email,
+          major: fetchedData.major || prev.major,
+          year: fetchedData.year_of_study || fetchedData.year || prev.year,
+          skills: Array.isArray(fetchedData.skills)
+            ? fetchedData.skills
+            : typeof fetchedData.skills === "string"
+            ? JSON.parse(fetchedData.skills)
+            : prev.skills,
+          bio: fetchedData.bio || prev.bio,
+          // Use photo_url from S3 if available, otherwise keep placeholder
           photo: fetchedData.photo_url || prev.photo,
+          photo_url: fetchedData.photo_url || prev.photo_url,
+          photo_name: fetchedData.photo_name || prev.photo_name,
           // Use cv_name for display if available
           cv: fetchedData.cv_name
             ? fetchedData.cv_name.split("/").pop()
             : prev.cv,
-          // Store the full S3 URLs for later use
-          photo_url: fetchedData.photo_url,
-          cv_url: fetchedData.cv_url,
-          cv_name: fetchedData.cv_name,
-          photo_name: fetchedData.photo_name,
+          cv_url: fetchedData.cv_url || prev.cv_url,
+          cv_name: fetchedData.cv_name || prev.cv_name,
           project: fetchedData.project || prev.project,
         }));
       } else {
-        console.warn("Failed to fetch student data:", result.message);
+        Alert.alert("Error", result.message || "Failed to load profile data");
       }
     } catch (error) {
-      console.error("Error fetching student data:", error);
-    }
-  };
-
-  const fetchMyProject = async () => {
-    try {
-      const userId = await AsyncStorage.getItem("userId");
-      const result = await getProject(userId);
-      console.log("Fetched project data:", result.data); // Debug log
-      if (result.success && result.data) {
-        // normalize project data to avoid undefined fields (like images)
-        const normalized = {
-          title: result.data.title || "",
-          description: result.data.description || "",
-          demoLink: result.data.demoLink || result.data.github_link || "",
-          images: Array.isArray(result.data.images) ? result.data.images : [],
-          status: result.data.status || "",
-          booth: result.data.booth || "",
-          created_at: result.data.created_at || null,
-          project_id: result.data.project_id || result.data.id || null,
-          student_id: result.data.student_id || null,
-          // keep original raw data if needed
-          _raw: result.data,
-        };
-        setMyProject(normalized);
-      } else {
-        // No project found
-        setMyProject(null);
-        console.log("No project found for user");
-      }
-    } catch (error) {
-      console.error("Error fetching project:", error);
-      setMyProject(null);
+      Alert.alert("Error", "An error occurred while loading your profile");
     }
   };
 
@@ -690,18 +432,15 @@ const Student = () => {
       const result = await postStudentData(userId, studentData);
 
       if (result.success) {
-        console.log("Student data updated successfully:", result.data);
         setStudentData((prev) => ({
           ...prev,
           ...result.data,
           project: result.data.project || prev.project,
         }));
       } else {
-        console.warn("Failed to update student data:", result.message);
         alert("Update failed: " + result.message);
       }
     } catch (error) {
-      console.error("Error updating student data:", error);
       alert("Error updating student data: " + error.message);
     }
   };
@@ -709,7 +448,6 @@ const Student = () => {
   //useEffects
   useEffect(() => {
     handleFetchStudentData();
-    fetchMyProject();
   }, []);
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -724,13 +462,20 @@ const Student = () => {
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Image
-                source={{ uri: studentData.photo }}
+                source={{
+                  uri:
+                    studentData.photo ||
+                    studentData.photo_url ||
+                    "https://via.placeholder.com/150",
+                }}
                 style={styles.headerPhoto}
               />
               <View>
                 <Text style={styles.headerGreeting}>Welcome back,</Text>
                 <Text style={styles.headerName}>
-                  {studentData.name.split(" ")[0]}
+                  {studentData.name
+                    ? studentData.name.split(" ")[0]
+                    : "Student"}
                 </Text>
               </View>
             </View>
@@ -775,25 +520,15 @@ const Student = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === "myprojects" && styles.activeTab,
-              ]}
-              onPress={() => setActiveTab("myprojects")}
+              style={styles.tab}
+              onPress={() => navigation.navigate("MyProject")}
             >
               <Ionicons
-                name={activeTab === "myprojects" ? "folder" : "folder-outline"}
+                name="folder-outline"
                 size={20}
-                color={activeTab === "myprojects" ? "#fff" : Colors.mainColor}
+                color={Colors.mainColor}
               />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "myprojects" && styles.activeTabText,
-                ]}
-              >
-                My Project
-              </Text>
+              <Text style={styles.tabText}>My Project</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -864,133 +599,15 @@ const Student = () => {
 
         {/* Content */}
         {activeTab === "profile" && renderProfileSection()}
-        {activeTab === "myprojects" && renderMyProjectSection()}
-        {activeTab === "students" && <ProjectsScreen />}
+        {activeTab === "students" && (
+          <OtherProjectsScreen navigation={navigation} />
+        )}
         {activeTab === "companies" && <CompaniesScreen />}
         {activeTab === "map" && (
           <MapScreen
-            studentProject={myProject?.title || studentData.project.title}
-            studentBooth={myProject?.booth || studentData.project.booth}
+            studentProject={studentData.project?.title || "No Project"}
           />
         )}
-
-        {/* Add/Edit Project Modal */}
-        <Modal
-          visible={showAddProject}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => {
-            setShowAddProject(false);
-            setEditingProject(false);
-          }}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {editingProject ? "Edit Project" : "Add Project"}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowAddProject(false);
-                    setEditingProject(false);
-                  }}
-                >
-                  <Ionicons name="close" size={28} color="#333" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={styles.inputLabel}>Project Title</Text>
-                <TextInput
-                  style={styles.input}
-                  value={projectData.title}
-                  onChangeText={(text) =>
-                    setProjectData((prev) => ({ ...prev, title: text }))
-                  }
-                  placeholder="Enter project title"
-                />
-
-                <Text style={styles.inputLabel}>Description</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={projectData.description}
-                  onChangeText={(text) =>
-                    setProjectData((prev) => ({ ...prev, description: text }))
-                  }
-                  multiline
-                  numberOfLines={4}
-                  placeholder="Describe your project"
-                />
-
-                <Text style={styles.inputLabel}>Demo Link</Text>
-                <TextInput
-                  style={styles.input}
-                  value={projectData.demoLink}
-                  onChangeText={(text) =>
-                    setProjectData((prev) => ({ ...prev, demoLink: text }))
-                  }
-                  placeholder="https://your-demo-link.com"
-                />
-
-                <Text style={styles.inputLabel}>Booth Number</Text>
-                <TextInput
-                  style={styles.input}
-                  value={projectData.booth}
-                  onChangeText={(text) =>
-                    setProjectData((prev) => ({ ...prev, booth: text }))
-                  }
-                  placeholder="e.g., A-12"
-                />
-
-                <Text style={styles.inputLabel}>Project Images</Text>
-                <TouchableOpacity
-                  style={styles.uploadImageButton}
-                  onPress={pickProjectImage}
-                >
-                  <Ionicons
-                    name="camera-outline"
-                    size={24}
-                    color={Colors.mainColor}
-                  />
-                  <Text style={styles.uploadImageText}>Upload Image</Text>
-                </TouchableOpacity>
-
-                {projectData.images?.length > 0 && (
-                  <ScrollView horizontal style={styles.selectedImagesContainer}>
-                    {projectData.images.map((image, index) => (
-                      <View key={index} style={styles.selectedImageContainer}>
-                        <Image
-                          source={{ uri: image }}
-                          style={styles.selectedImage}
-                        />
-                        <TouchableOpacity
-                          style={styles.removeImageButton}
-                          onPress={() =>
-                            setProjectData((prev) => ({
-                              ...prev,
-                              images: prev.images.filter((_, i) => i !== index),
-                            }))
-                          }
-                        >
-                          <Ionicons name="close" size={16} color="#fff" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </ScrollView>
-                )}
-
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={saveProject}
-                >
-                  <Text style={styles.saveButtonText}>
-                    {editingProject ? "Update Project" : "Add Project"}
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
 
         {/* Notifications Modal */}
         <Modal
@@ -1072,7 +689,12 @@ const Student = () => {
                   onPress={pickImage}
                 >
                   <Image
-                    source={{ uri: studentData.photo }}
+                    source={{
+                      uri:
+                        studentData.photo ||
+                        studentData.photo_url ||
+                        "https://via.placeholder.com/150",
+                    }}
                     style={styles.editPhoto}
                   />
                   <View style={styles.editPhotoButton}>
@@ -1894,6 +1516,191 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: Colors.mainColor,
     marginTop: 5,
+  },
+  // Modern Project Styles
+  modernProjectContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  modernProjectHeader: {
+    marginBottom: 20,
+  },
+  modernProjectTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  modernProjectTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    flex: 1,
+  },
+  modernStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+  },
+  modernStatusText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  modernProjectSection: {
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  modernSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  modernSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  modernProjectDescription: {
+    fontSize: 15,
+    color: "#666",
+    lineHeight: 24,
+    paddingLeft: 28,
+  },
+  modernImageGallery: {
+    marginLeft: 28,
+  },
+  modernImageCard: {
+    position: "relative",
+    marginRight: 12,
+  },
+  modernProjectImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    backgroundColor: "#F5F5F5",
+  },
+  imageNumberBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  imageNumberText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  modernLinksContainer: {
+    paddingLeft: 28,
+    gap: 12,
+  },
+  modernLinkButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  modernLinkIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  modernLinkContent: {
+    flex: 1,
+  },
+  modernLinkTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  modernLinkUrl: {
+    fontSize: 12,
+    color: "#999",
+  },
+  modernTeamContainer: {
+    paddingLeft: 28,
+    gap: 10,
+  },
+  modernMemberCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  modernMemberAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.mainColor,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modernMemberInfo: {
+    flex: 1,
+  },
+  modernMemberName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  modernMemberEmail: {
+    fontSize: 13,
+    color: "#666",
+  },
+  modernEditButton: {
+    backgroundColor: Colors.mainColor,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 10,
+    elevation: 3,
+    shadowColor: Colors.mainColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  modernEditButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

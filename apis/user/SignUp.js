@@ -1,7 +1,6 @@
 import axios from "axios";
 import { BASE_URL } from "../../constants/config";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from "jwt-decode";
+import { storeAuthData } from "../../utils/auth";
 
 export const registerUser = async (body) => {
   try {
@@ -20,24 +19,37 @@ export const registerUser = async (body) => {
       }
     );
 
-    return { success: true, message: `${body.name} registered successfully` };
+    // Handle new response format
+    if (response.data.success) {
+      return {
+        success: true,
+        message:
+          response.data.message || `${body.name} registered successfully`,
+        data: response.data.data,
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Registration failed",
+      };
+    }
   } catch (error) {
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
+      // Server responded with error
       return {
         success: false,
         message: error.response.data.message || error.response.data,
       };
     } else if (error.request) {
-      // The request was made but no response was received
+      // No response from server
       return { success: false, message: "No response from server" };
     } else {
-      // Something happened in setting up the request that triggered an Error
+      // Request setup error
       return { success: false, message: error.message };
     }
   }
 };
+
 export const loginUser = async (body, navigation) => {
   try {
     const response = await axios.post(
@@ -53,24 +65,35 @@ export const loginUser = async (body, navigation) => {
       }
     );
 
-    const token = response.data.token;
-    const decoded = jwtDecode(token);
-    const role = decoded.role;
-    const userId = decoded.userId;
+    // Handle new response format
+    if (response.data.success) {
+      const { token, userId, role } = response.data.data;
 
-    await AsyncStorage.setItem("token", token);
-    await AsyncStorage.setItem("role", role);
-    await AsyncStorage.setItem("userId", userId);
+      // Store authentication data
+      await storeAuthData(token, userId, role);
 
-    if (role === "visitor") {
-      navigation.navigate("VisitorScreen");
-    } else if (role === "student") {
-      navigation.navigate("Student");
-    } else if (role === "company") {
-      navigation.navigate("CompanyScreen");
+      // Navigate based on role
+      if (role === "visitor") {
+        navigation.navigate("VisitorScreen");
+      } else if (role === "student") {
+        navigation.navigate("Student");
+      } else if (role === "company") {
+        navigation.navigate("CompanyScreen");
+      }
+
+      return {
+        success: true,
+        message: response.data.message || "Login successful",
+        token,
+        userId,
+        role,
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Login failed",
+      };
     }
-
-    return { success: true, message: "Login successful", token };
   } catch (error) {
     if (error.response) {
       return {
