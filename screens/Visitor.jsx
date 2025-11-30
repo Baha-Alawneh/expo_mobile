@@ -141,7 +141,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     marginHorizontal: 5,
-    gap: 6,
     backgroundColor: "#F0F4FF",
   },
   activeTab: {

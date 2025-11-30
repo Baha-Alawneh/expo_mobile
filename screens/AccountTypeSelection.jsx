@@ -261,7 +261,6 @@ const styles = StyleSheet.create({
   cardsContainer: {
     flex: 1,
     justifyContent: "center",
-    gap: 16,
   },
   card: {
     borderRadius: 20,
@@ -338,7 +337,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 18,
-    gap: 12,
   },
   continueButtonText: {
     fontSize: 18,
