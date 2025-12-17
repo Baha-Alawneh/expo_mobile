@@ -23,15 +23,57 @@ const StudentDetailsScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     console.log("StudentDetailsScreen params:", { email, student });
+    console.log("Student object received:", JSON.stringify(student, null, 2));
 
-    // Get email from either direct param or student object
-    const studentEmail = email || student?.email;
+    // If student object is passed with complete data, use it directly
+    if (student && student.email && (student.photo_url || student.name)) {
+      console.log("Using passed student data directly");
 
-    if (studentEmail) {
-      fetchStudentData(studentEmail);
-    } else {
-      setError("No student email provided");
+      // Parse skills if it's a string
+      let parsedSkills = [];
+      if (student.skills) {
+        if (Array.isArray(student.skills)) {
+          parsedSkills = student.skills;
+        } else if (typeof student.skills === "string") {
+          try {
+            parsedSkills = JSON.parse(student.skills);
+          } catch (e) {
+            console.error("Error parsing skills:", e);
+            parsedSkills = [];
+          }
+        }
+      }
+
+      const mappedData = {
+        name: student.name || "Unknown Student",
+        email: student.email || "",
+        major: student.major || "",
+        year: student.year_of_study || student.year || "",
+        skills: parsedSkills,
+        bio: student.bio || "",
+        photo: student.photo_url || "https://via.placeholder.com/150",
+        photo_url: student.photo_url || null,
+        photo_name: student.photo_name || null,
+        cv_name: student.cv_name ? student.cv_name.split("/").pop() : null,
+        cv_url: student.cv_url || null,
+        project: student.project || { title: "", booth: "" },
+      };
+
+      console.log("Mapped student data:", mappedData);
+      setStudentData(mappedData);
       setLoading(false);
+      setError(null);
+    } else {
+      console.log("Fetching student data by email");
+      // Otherwise, fetch by email
+      const studentEmail = email || student?.email;
+
+      if (studentEmail) {
+        fetchStudentData(studentEmail);
+      } else {
+        setError("No student email provided");
+        setLoading(false);
+      }
     }
   }, [email, student]);
 

@@ -14,12 +14,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 import { getAllProjectsExceptMine } from "../apis/project/Project";
 import { getUserId } from "../utils/auth";
+import StarRating from "../components/StarRating";
 
 const OtherProjectsScreen = ({ navigation }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState(null); // null, 'name', 'rating'
+  const [sortOrder, setSortOrder] = useState("DESC"); // 'ASC' or 'DESC'
 
   const fetchProjects = async () => {
     try {
@@ -31,7 +34,11 @@ const OtherProjectsScreen = ({ navigation }) => {
         return;
       }
 
-      const response = await getAllProjectsExceptMine(userId);
+      const response = await getAllProjectsExceptMine(
+        userId,
+        sortBy,
+        sortOrder
+      );
       console.log("Fetched projects response:", response);
 
       if (response.success) {
@@ -62,11 +69,24 @@ const OtherProjectsScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [sortBy, sortOrder]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchProjects();
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === "ASC" ? "DESC" : "ASC");
+  };
+
+  const changeSortBy = (newSortBy) => {
+    if (sortBy === newSortBy) {
+      toggleSortOrder();
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder("DESC");
+    }
   };
 
   const renderEmptyState = () => (
@@ -106,9 +126,68 @@ const OtherProjectsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Other Projects</Text>
-        <Text style={styles.sectionSubtitle}>{projects.length} projects</Text>
+        <View>
+          <Text style={styles.sectionTitle}>Other Projects</Text>
+          <Text style={styles.sectionSubtitle}>{projects.length} projects</Text>
+        </View>
       </View>
+
+      {/* Sorting Options */}
+      <View style={styles.sortingContainer}>
+        <TouchableOpacity
+          style={[
+            styles.sortButton,
+            sortBy === "name" && styles.sortButtonActive,
+          ]}
+          onPress={() => changeSortBy("name")}
+        >
+          <Ionicons
+            name="text"
+            size={16}
+            color={sortBy === "name" ? Colors.mainColor : "#666"}
+          />
+          <Text
+            style={[
+              styles.sortButtonText,
+              sortBy === "name" && styles.sortButtonTextActive,
+            ]}
+          >
+            Name {sortBy === "name" && (sortOrder === "ASC" ? "↑" : "↓")}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.sortButton,
+            sortBy === "rating" && styles.sortButtonActive,
+          ]}
+          onPress={() => changeSortBy("rating")}
+        >
+          <Ionicons
+            name="star"
+            size={16}
+            color={sortBy === "rating" ? Colors.mainColor : "#666"}
+          />
+          <Text
+            style={[
+              styles.sortButtonText,
+              sortBy === "rating" && styles.sortButtonTextActive,
+            ]}
+          >
+            Rating {sortBy === "rating" && (sortOrder === "ASC" ? "↑" : "↓")}
+          </Text>
+        </TouchableOpacity>
+
+        {sortBy && (
+          <TouchableOpacity
+            style={styles.clearSortButton}
+            onPress={() => setSortBy(null)}
+          >
+            <Ionicons name="close-circle" size={18} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <FlatList
         data={projects}
         keyExtractor={(item) => item.project_id}
@@ -194,6 +273,18 @@ const OtherProjectsScreen = ({ navigation }) => {
                 <Text style={styles.projectDescription} numberOfLines={2}>
                   {truncatedDescription}
                 </Text>
+
+                {/* Rating Stars */}
+                <View style={styles.ratingContainer}>
+                  <StarRating rating={item.average_rating || 0} size={16} />
+                  <Text style={styles.ratingText}>
+                    {item.average_rating
+                      ? item.average_rating.toFixed(1)
+                      : "0.0"}
+                    {item.total_ratings > 0 && ` (${item.total_ratings})`}
+                  </Text>
+                </View>
+
                 <View style={styles.projectFooter}>
                   <View style={styles.boothInfo}>
                     <Ionicons
@@ -259,6 +350,53 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     color: "#666",
+    marginTop: 4,
+  },
+  sortingContainer: {
+    flexDirection: "row",
+    marginBottom: 15,
+    gap: 10,
+  },
+  sortButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FFF",
+    gap: 6,
+  },
+  sortButtonActive: {
+    borderColor: Colors.mainColor,
+    backgroundColor: `${Colors.mainColor}15`,
+  },
+  sortButtonText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  sortButtonTextActive: {
+    color: Colors.mainColor,
+    fontWeight: "600",
+  },
+  clearSortButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  ratingText: {
+    marginLeft: 6,
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
   },
   projectCard: {
     backgroundColor: "#fff",

@@ -13,12 +13,26 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
+import StarRating from "../components/StarRating";
+import RatingModal from "../components/RatingModal";
+import FeedbackList from "../components/FeedbackList";
 import { getOfferingByCompanyId } from "../apis/company/Offering";
+import {
+  getOfferingFeedback,
+  getUserOfferingFeedback,
+  submitOfferingFeedback,
+} from "../apis/feedback/Feedback";
+import { getUserId } from "../utils/auth";
 
 const CompanyDetailsScreen = ({ navigation, route }) => {
   const { company } = route.params || {};
   const [offering, setOffering] = useState(null);
   const [loadingOffering, setLoadingOffering] = useState(true);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [userFeedback, setUserFeedback] = useState(null);
+  const [allFeedback, setAllFeedback] = useState([]);
+  const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (company && company.company_id) {
@@ -27,6 +41,60 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
       setLoadingOffering(false);
     }
   }, [company]);
+
+  useEffect(() => {
+    if (offering?.offering_id) {
+      loadFeedbackData();
+      checkOwnership();
+    }
+  }, [offering?.offering_id]);
+
+  const checkOwnership = async () => {
+    try {
+      const userId = await getUserId();
+      setIsOwner(company?.user_id === userId);
+    } catch (error) {
+      console.error("Error checking ownership:", error);
+    }
+  };
+
+  const loadFeedbackData = async () => {
+    if (!offering?.offering_id) return;
+
+    try {
+      const feedbackResponse = await getOfferingFeedback(offering.offering_id);
+      if (feedbackResponse.success) {
+        setAllFeedback(feedbackResponse.data.feedback || []);
+        setFeedbackStats({
+          average: feedbackResponse.data.average_rating || 0,
+          count: feedbackResponse.data.total_ratings || 0,
+        });
+      }
+
+      try {
+        const userFeedbackResponse = await getUserOfferingFeedback(
+          offering.offering_id
+        );
+        if (userFeedbackResponse.success && userFeedbackResponse.data) {
+          setUserFeedback(userFeedbackResponse.data);
+        }
+      } catch (error) {
+        console.log("No user feedback yet");
+      }
+    } catch (error) {
+      console.error("Error loading feedback:", error);
+    }
+  };
+
+  const handleRatingSubmit = async ({ rating, comment }) => {
+    try {
+      await submitOfferingFeedback(offering.offering_id, rating, comment);
+      setShowRatingModal(false);
+      loadFeedbackData();
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+    }
+  };
 
   const fetchOffering = async () => {
     try {
@@ -261,6 +329,39 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                   </View>
                 )}
 
+                {/* Rating & Feedback Section */}
+                <View style={styles.offeringSection}>
+                  <Text style={styles.offeringLabel}>Ratings & Reviews</Text>
+                  <View style={styles.ratingContainer}>
+                    <View style={styles.ratingOverview}>
+                      <Text style={styles.ratingValue}>
+                        {feedbackStats.average.toFixed(1)}
+                      </Text>
+                      <StarRating rating={feedbackStats.average} size={24} />
+                      <Text style={styles.ratingCount}>
+                        {feedbackStats.count}{" "}
+                        {feedbackStats.count === 1 ? "rating" : "ratings"}
+                      </Text>
+                    </View>
+                    {!isOwner && (
+                      <TouchableOpacity
+                        style={styles.rateButton}
+                        onPress={() => setShowRatingModal(true)}
+                      >
+                        <Ionicons name="star-outline" size={20} color="#fff" />
+                        <Text style={styles.rateButtonText}>
+                          {userFeedback ? "Edit Rating" : "Rate Offering"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  {isOwner && allFeedback.length > 0 && (
+                    <View style={styles.feedbackSection}>
+                      <FeedbackList feedback={allFeedback} />
+                    </View>
+                  )}
+                </View>
+
                 {/* Price */}
                 {offering.price && (
                   <View style={styles.offeringSection}>
@@ -326,6 +427,13 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
           </View>
         </ScrollView>
       </View>
+      <RatingModal
+        visible={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        onSubmit={handleRatingSubmit}
+        initialRating={userFeedback?.rating}
+        initialComment={userFeedback?.comment}
+      />
     </SafeAreaView>
   );
 };
@@ -610,6 +718,45 @@ const styles = StyleSheet.create({
     color: "#999",
     marginTop: 15,
     textAlign: "center",
+  },
+  ratingContainer: {
+    gap: 16,
+    marginTop: 12,
+  },
+  ratingOverview: {
+    alignItems: "center",
+    paddingVertical: 16,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    gap: 8,
+  },
+  ratingValue: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  ratingCount: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  rateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.mainColor,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  rateButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  feedbackSection: {
+    marginTop: 16,
   },
 });
 

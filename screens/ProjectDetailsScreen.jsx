@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,12 +9,106 @@ import {
   Alert,
   Platform,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
+import StarRating from "../components/StarRating";
+import RatingModal from "../components/RatingModal";
+import FeedbackList from "../components/FeedbackList";
+import {
+  getProjectFeedback,
+  getUserProjectFeedback,
+  submitProjectFeedback,
+} from "../apis/feedback/Feedback";
+import { getUserId } from "../utils/auth";
 
 const ProjectDetailsScreen = ({ navigation, route }) => {
   const { project } = route.params || {};
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [userFeedback, setUserFeedback] = useState(null);
+  const [allFeedback, setAllFeedback] = useState([]);
+  const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    if (project?.project_id) {
+      loadFeedbackData();
+      checkOwnership();
+    }
+  }, [project?.project_id]);
+
+  const checkOwnership = async () => {
+    try {
+      const userId = await getUserId();
+      if (project.students && project.students.length > 0) {
+        const isProjectOwner = project.students.some(
+          (student) => student.user_id === userId
+        );
+        setIsOwner(isProjectOwner);
+      }
+    } catch (error) {
+      console.error("Error checking ownership:", error);
+    }
+  };
+
+  const loadFeedbackData = async () => {
+    try {
+      setLoadingFeedback(true);
+
+      // Get all feedback for the project
+      const feedbackResponse = await getProjectFeedback(project.project_id);
+      if (feedbackResponse.success) {
+        setAllFeedback(feedbackResponse.data.feedback || []);
+        setFeedbackStats({
+          average: feedbackResponse.data.average_rating || 0,
+          count: feedbackResponse.data.total_ratings || 0,
+        });
+      }
+
+      // Get user's own feedback if logged in
+      try {
+        const userFeedbackResponse = await getUserProjectFeedback(
+          project.project_id
+        );
+        if (userFeedbackResponse.success && userFeedbackResponse.data) {
+          setUserFeedback(userFeedbackResponse.data);
+        }
+      } catch (error) {
+        // User not logged in or hasn't rated yet
+        console.log("No user feedback yet");
+      }
+    } catch (error) {
+      console.error("Error loading feedback:", error);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
+  const handleRatingSubmit = async ({ rating, comment }) => {
+    try {
+      setSubmitting(true);
+      console.log("📝 Submitting rating:", {
+        project_id: project.project_id,
+        rating,
+        comment,
+        projectKeys: Object.keys(project),
+      });
+      await submitProjectFeedback(project.project_id, rating, comment);
+      Alert.alert("Success", "Your rating has been submitted!");
+      setShowRatingModal(false);
+      loadFeedbackData(); // Reload feedback
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to submit rating"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Helper function to get status color and text
   const getStatusInfo = (status) => {
@@ -119,6 +213,44 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                   {getStatusInfo(project.status).text}
                 </Text>
               </View>
+            </View>
+
+            {/* Rating Section */}
+            <View style={styles.modernProjectSection}>
+              <View style={styles.modernSectionHeader}>
+                <Ionicons name="star" size={20} color="#FFD700" />
+                <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                  Ratings & Reviews
+                </Text>
+              </View>
+              <View style={styles.ratingContainer}>
+                <View style={styles.ratingOverview}>
+                  <Text style={styles.ratingValue}>
+                    {feedbackStats.average.toFixed(1)}
+                  </Text>
+                  <StarRating rating={feedbackStats.average} size={24} />
+                  <Text style={styles.ratingCount}>
+                    {feedbackStats.count}{" "}
+                    {feedbackStats.count === 1 ? "rating" : "ratings"}
+                  </Text>
+                </View>
+                {!isOwner && (
+                  <TouchableOpacity
+                    style={styles.rateButton}
+                    onPress={() => setShowRatingModal(true)}
+                  >
+                    <Ionicons name="star-outline" size={20} color="#fff" />
+                    <Text style={styles.rateButtonText}>
+                      {userFeedback ? "Edit Rating" : "Rate Project"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {isOwner && allFeedback.length > 0 && (
+                <View style={styles.feedbackSection}>
+                  <FeedbackList feedback={allFeedback} />
+                </View>
+              )}
             </View>
 
             {/* Description Section */}
@@ -300,6 +432,13 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
           </View>
         </ScrollView>
       </View>
+      <RatingModal
+        visible={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        onSubmit={handleRatingSubmit}
+        initialRating={userFeedback?.rating}
+        initialComment={userFeedback?.comment}
+      />
     </SafeAreaView>
   );
 };
@@ -528,6 +667,45 @@ const styles = StyleSheet.create({
   modernLinkUrl: {
     fontSize: 12,
     color: "#999",
+  },
+  ratingContainer: {
+    paddingLeft: 28,
+    gap: 16,
+  },
+  ratingOverview: {
+    alignItems: "center",
+    paddingVertical: 16,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    gap: 8,
+  },
+  ratingValue: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  ratingCount: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  rateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.mainColor,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  rateButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  feedbackSection: {
+    marginTop: 16,
   },
 });
 
