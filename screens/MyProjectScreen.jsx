@@ -17,6 +17,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
+import StarRating from "../components/StarRating";
+import FeedbackList from "../components/FeedbackList";
+import { getProjectFeedback } from "../apis/feedback/Feedback";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -33,6 +36,8 @@ const MyProjectScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [allFeedback, setAllFeedback] = useState([]);
+  const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
   const [projectData, setProjectData] = useState({
     title: "",
     description: "",
@@ -107,6 +112,39 @@ const MyProjectScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const loadFeedbackData = async () => {
+    if (!myProject?.project_id) {
+      console.log("No project_id available for feedback");
+      return;
+    }
+
+    try {
+      console.log("Loading feedback for project:", myProject.project_id);
+      const feedbackResponse = await getProjectFeedback(myProject.project_id);
+      console.log("Feedback response:", feedbackResponse);
+
+      if (feedbackResponse.success) {
+        const feedback = feedbackResponse.data.feedback || [];
+        const average = feedbackResponse.data.average_rating || 0;
+        const count = feedbackResponse.data.total_ratings || 0;
+
+        console.log("Setting feedback:", { feedback, average, count });
+        setAllFeedback(feedback);
+        setFeedbackStats({
+          average: average,
+          count: count,
+        });
+      } else {
+        console.log(
+          "Feedback response not successful:",
+          feedbackResponse.message
+        );
+      }
+    } catch (error) {
+      console.error("Error loading feedback:", error);
     }
   };
 
@@ -270,6 +308,12 @@ const MyProjectScreen = ({ navigation }) => {
   useEffect(() => {
     fetchMyProject();
   }, []);
+
+  useEffect(() => {
+    if (myProject?.project_id) {
+      loadFeedbackData();
+    }
+  }, [myProject?.project_id]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -460,6 +504,31 @@ const MyProjectScreen = ({ navigation }) => {
                   </Text>
                 </View>
               ) : null}
+
+              {/* Rating & Feedback Section */}
+              <View style={styles.modernProjectSection}>
+                <View style={styles.modernSectionHeader}>
+                  <Ionicons name="star" size={20} color="#FFD700" />
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                    Ratings & Reviews
+                  </Text>
+                </View>
+                <View style={styles.ratingContainer}>
+                  <View style={styles.ratingOverview}>
+                    <Text style={styles.ratingValue}>
+                      {feedbackStats.average.toFixed(1)}
+                    </Text>
+                    <StarRating rating={feedbackStats.average} size={24} />
+                    <Text style={styles.ratingCount}>
+                      {feedbackStats.count}{" "}
+                      {feedbackStats.count === 1 ? "rating" : "ratings"}
+                    </Text>
+                  </View>
+                  <View style={styles.feedbackSection}>
+                    <FeedbackList feedbackList={allFeedback} />
+                  </View>
+                </View>
+              </View>
 
               {/* Team Members Section */}
               {myProject.students && myProject.students.length > 0 && (
@@ -1219,6 +1288,30 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  ratingContainer: {
+    paddingLeft: 28,
+    gap: 16,
+  },
+  ratingOverview: {
+    alignItems: "center",
+    paddingVertical: 16,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    gap: 8,
+  },
+  ratingValue: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  ratingCount: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  feedbackSection: {
+    marginTop: 16,
   },
 });
 

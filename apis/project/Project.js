@@ -158,13 +158,22 @@ export const updateProject = async (user_id, projectData) => {
 };
 
 // GET all projects except user's own project
-export const getAllProjectsExceptMine = async (user_id) => {
+export const getAllProjectsExceptMine = async (
+  user_id,
+  sortBy = null,
+  sortOrder = null
+) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await axios.get(
-      `${BASE_URL}/projects/all/except/${user_id}`,
-      { headers }
-    );
+    let url = `${BASE_URL}/projects/all/except/${user_id}`;
+
+    // Add query parameters if sorting is specified
+    const params = new URLSearchParams();
+    if (sortBy) params.append("sortBy", sortBy);
+    if (sortOrder) params.append("sortOrder", sortOrder);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const response = await axios.get(url, { headers });
 
     // Handle new response format
     if (response.data.success) {

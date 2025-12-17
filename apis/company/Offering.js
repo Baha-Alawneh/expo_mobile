@@ -2,6 +2,62 @@ import axios from "axios";
 import { BASE_URL } from "../../constants/config";
 import { getAuthHeaders } from "../../utils/auth";
 
+// Get all offerings with optional sorting
+export const getAllOfferings = async (sortBy = null, sortOrder = "DESC") => {
+  try {
+    const headers = await getAuthHeaders();
+    let url = `${BASE_URL}/companies/offerings/all`;
+
+    // Add query parameters if sorting is specified
+    if (sortBy) {
+      url += `?sortBy=${sortBy}&sortOrder=${sortOrder}`;
+    }
+
+    const response = await axios.get(url, { headers });
+
+    if (response.data.success) {
+      return {
+        success: true,
+        data: response.data.data,
+        count: response.data.count,
+        message: response.data.message || "Offerings fetched successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to fetch offerings",
+        notFound: response.data.notFound || false,
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      if (error.response.status === 404) {
+        return {
+          success: false,
+          message: "No offerings found",
+          notFound: true,
+          data: [],
+        };
+      }
+      if (error.response.status === 401) {
+        return {
+          success: false,
+          message: "Session expired. Please login again.",
+          unauthorized: true,
+        };
+      }
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};
+
 export const getOffering = async (userId) => {
   try {
     const headers = await getAuthHeaders();

@@ -155,6 +155,70 @@ export const sendMessage = async (chatId, senderId, text, senderName) => {
 };
 
 /**
+ * Send a message with attachment (image or file)
+ */
+export const sendMessageWithAttachment = async (
+  chatId,
+  senderId,
+  text,
+  senderName,
+  attachment
+) => {
+  try {
+    const messagesRef = collection(db, "chats", chatId, "messages");
+    const chatRef = doc(db, "chats", chatId);
+
+    // Add message with attachment
+    const messageData = {
+      senderId,
+      senderName,
+      text: text || "",
+      createdAt: serverTimestamp(),
+      isRead: false,
+    };
+
+    // Add attachment info if present
+    if (attachment) {
+      messageData.attachment = {
+        url: attachment.url,
+        type: attachment.type, // 'image' or 'file'
+        name: attachment.name,
+        size: attachment.size,
+        mimeType: attachment.mimeType,
+      };
+    }
+
+    await addDoc(messagesRef, messageData);
+
+    // Get chat members to determine who to increment unread count for
+    const chatSnap = await getDoc(chatRef);
+    if (chatSnap.exists()) {
+      const chatData = chatSnap.data();
+      const otherUserId = chatData.members.find((id) => id !== senderId);
+
+      // Update chat with last message preview
+      const lastMessagePreview = attachment
+        ? attachment.type === "image"
+          ? "📷 Image"
+          : `📄 ${attachment.name}`
+        : text;
+
+      // Update chat with last message and increment unread count for other user
+      await updateDoc(chatRef, {
+        lastMessage: lastMessagePreview,
+        lastMessageTime: serverTimestamp(),
+        [`unreadCount_${otherUserId}`]: increment(1),
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending message with attachment:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Listen to messages in a chat (real-time)
  */
 export const subscribeToMessages = (chatId, callback) => {

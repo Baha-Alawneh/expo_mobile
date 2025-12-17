@@ -17,6 +17,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
+import StarRating from "../components/StarRating";
+import FeedbackList from "../components/FeedbackList";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -24,6 +26,7 @@ import {
   createOffering,
   updateOffering,
 } from "../apis/company/Offering";
+import { getOfferingFeedback } from "../apis/feedback/Feedback";
 
 const MyOfferingScreen = ({ navigation }) => {
   const [myOffering, setMyOffering] = useState(null);
@@ -32,6 +35,8 @@ const MyOfferingScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [allFeedback, setAllFeedback] = useState([]);
+  const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
   const [offeringData, setOfferingData] = useState({
     name: "",
     description: "",
@@ -196,9 +201,50 @@ const MyOfferingScreen = ({ navigation }) => {
     }
   };
 
+  const loadFeedbackData = async () => {
+    if (!myOffering?.offering_id) {
+      console.log("No offering_id available for feedback");
+      return;
+    }
+
+    try {
+      console.log("Loading feedback for offering:", myOffering.offering_id);
+      const feedbackResponse = await getOfferingFeedback(
+        myOffering.offering_id
+      );
+      console.log("Offering feedback response:", feedbackResponse);
+
+      if (feedbackResponse.success) {
+        const feedback = feedbackResponse.data.feedback || [];
+        const average = feedbackResponse.data.average_rating || 0;
+        const count = feedbackResponse.data.total_ratings || 0;
+
+        console.log("Setting offering feedback:", { feedback, average, count });
+        setAllFeedback(feedback);
+        setFeedbackStats({
+          average: average,
+          count: count,
+        });
+      } else {
+        console.log(
+          "Offering feedback response not successful:",
+          feedbackResponse.message
+        );
+      }
+    } catch (error) {
+      console.error("Error loading offering feedback:", error);
+    }
+  };
+
   useEffect(() => {
     fetchMyOffering();
   }, []);
+
+  useEffect(() => {
+    if (myOffering?.offering_id) {
+      loadFeedbackData();
+    }
+  }, [myOffering?.offering_id]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -373,6 +419,31 @@ const MyOfferingScreen = ({ navigation }) => {
                   </Text>
                 </View>
               ) : null}
+
+              {/* Rating & Feedback Section */}
+              <View style={styles.modernOfferingSection}>
+                <View style={styles.modernSectionHeader}>
+                  <Ionicons name="star" size={20} color="#FFD700" />
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                    Ratings & Reviews
+                  </Text>
+                </View>
+                <View style={styles.ratingContainer}>
+                  <View style={styles.ratingOverview}>
+                    <Text style={styles.ratingValue}>
+                      {feedbackStats.average.toFixed(1)}
+                    </Text>
+                    <StarRating rating={feedbackStats.average} size={24} />
+                    <Text style={styles.ratingCount}>
+                      {feedbackStats.count}{" "}
+                      {feedbackStats.count === 1 ? "rating" : "ratings"}
+                    </Text>
+                  </View>
+                  <View style={styles.feedbackSection}>
+                    <FeedbackList feedbackList={allFeedback} />
+                  </View>
+                </View>
+              </View>
 
               {/* Offering Images Gallery */}
               {myOffering.offering_photos?.length > 0 && (
@@ -873,6 +944,30 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  ratingContainer: {
+    paddingLeft: 28,
+    gap: 16,
+  },
+  ratingOverview: {
+    alignItems: "center",
+    paddingVertical: 16,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    gap: 8,
+  },
+  ratingValue: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  ratingCount: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  feedbackSection: {
+    marginTop: 16,
   },
 });
 
