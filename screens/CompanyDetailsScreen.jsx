@@ -25,7 +25,7 @@ import {
 import { getUserId } from "../utils/auth";
 
 const CompanyDetailsScreen = ({ navigation, route }) => {
-  const { company } = route.params || {};
+  const { company, fromAdmin } = route.params || {};
   const [offering, setOffering] = useState(null);
   const [loadingOffering, setLoadingOffering] = useState(true);
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -330,37 +330,39 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                 )}
 
                 {/* Rating & Feedback Section */}
-                <View style={styles.offeringSection}>
-                  <Text style={styles.offeringLabel}>Ratings & Reviews</Text>
-                  <View style={styles.ratingContainer}>
-                    <View style={styles.ratingOverview}>
-                      <Text style={styles.ratingValue}>
-                        {feedbackStats.average.toFixed(1)}
-                      </Text>
-                      <StarRating rating={feedbackStats.average} size={24} />
-                      <Text style={styles.ratingCount}>
-                        {feedbackStats.count}{" "}
-                        {feedbackStats.count === 1 ? "rating" : "ratings"}
-                      </Text>
-                    </View>
-                    {!isOwner && (
-                      <TouchableOpacity
-                        style={styles.rateButton}
-                        onPress={() => setShowRatingModal(true)}
-                      >
-                        <Ionicons name="star-outline" size={20} color="#fff" />
-                        <Text style={styles.rateButtonText}>
-                          {userFeedback ? "Edit Rating" : "Rate Offering"}
+                {!fromAdmin && (
+                  <View style={styles.offeringSection}>
+                    <Text style={styles.offeringLabel}>Ratings & Reviews</Text>
+                    <View style={styles.ratingContainer}>
+                      <View style={styles.ratingOverview}>
+                        <Text style={styles.ratingValue}>
+                          {feedbackStats.average.toFixed(1)}
                         </Text>
-                      </TouchableOpacity>
+                        <StarRating rating={feedbackStats.average} size={24} />
+                        <Text style={styles.ratingCount}>
+                          {feedbackStats.count}{" "}
+                          {feedbackStats.count === 1 ? "rating" : "ratings"}
+                        </Text>
+                      </View>
+                      {!isOwner && (
+                        <TouchableOpacity
+                          style={styles.rateButton}
+                          onPress={() => setShowRatingModal(true)}
+                        >
+                          <Ionicons name="star-outline" size={20} color="#fff" />
+                          <Text style={styles.rateButtonText}>
+                            {userFeedback ? "Edit Rating" : "Rate Offering"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    {isOwner && allFeedback.length > 0 && (
+                      <View style={styles.feedbackSection}>
+                        <FeedbackList feedbackList={allFeedback} />
+                      </View>
                     )}
                   </View>
-                  {isOwner && allFeedback.length > 0 && (
-                    <View style={styles.feedbackSection}>
-                      <FeedbackList feedback={allFeedback} />
-                    </View>
-                  )}
-                </View>
+                )}
 
                 {/* Price */}
                 {offering.price && (

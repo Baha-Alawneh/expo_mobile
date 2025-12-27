@@ -30,38 +30,55 @@ const FeedbackList = ({
     });
   };
 
-  const renderFeedbackItem = (item) => (
-    <View key={item.feedback_id} style={styles.feedbackCard}>
-      <View style={styles.feedbackHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
-              {item.user_name ? item.user_name.charAt(0).toUpperCase() : "U"}
-            </Text>
+  // Helper function to check if comment should be displayed
+  const hasValidComment = (comment) => {
+    return comment !== null && 
+           comment !== undefined && 
+           typeof comment === 'string' && 
+           comment.trim().length > 0;
+  };
+
+  const renderFeedbackItem = (item) => {
+    // Safety check for item
+    if (!item || !item.feedback_id) {
+      return null;
+    }
+
+    return (
+      <View key={item.feedback_id} style={styles.feedbackCard}>
+        <View style={styles.feedbackHeader}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {item.user_name && item.user_name.length > 0 
+                  ? item.user_name.charAt(0).toUpperCase() 
+                  : "U"}
+              </Text>
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{item.user_name || "Anonymous"}</Text>
+              <Text style={styles.feedbackDate}>
+                {item.created_at ? formatDate(item.created_at) : "Unknown date"}
+              </Text>
+            </View>
           </View>
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{item.user_name || "Anonymous"}</Text>
-            <Text style={styles.feedbackDate}>
-              {formatDate(item.created_at)}
-            </Text>
-          </View>
+          <StarRating rating={item.rating || 0} size={18} editable={false} />
         </View>
-        <StarRating rating={item.rating} size={18} editable={false} />
+
+        {hasValidComment(item.comment) && (
+          <View style={styles.commentContainer}>
+            <Text style={styles.commentText}>{item.comment.trim()}</Text>
+          </View>
+        )}
+
+        {item.updated_at && item.created_at && item.updated_at !== item.created_at && (
+          <Text style={styles.editedText}>
+            Edited {formatDate(item.updated_at)}
+          </Text>
+        )}
       </View>
-
-      {item.comment && (
-        <View style={styles.commentContainer}>
-          <Text style={styles.commentText}>{item.comment}</Text>
-        </View>
-      )}
-
-      {item.updated_at !== item.created_at && (
-        <Text style={styles.editedText}>
-          Edited {formatDate(item.updated_at)}
-        </Text>
-      )}
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -72,7 +89,7 @@ const FeedbackList = ({
     );
   }
 
-  if (feedbackList.length === 0) {
+  if (!feedbackList || feedbackList.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.emptyText}>{emptyMessage}</Text>

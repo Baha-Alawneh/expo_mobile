@@ -35,12 +35,12 @@ const RatingModal = ({
   loading = false,
 }) => {
   const [rating, setRating] = useState(initialRating);
-  const [comment, setComment] = useState(initialComment);
+  const [comment, setComment] = useState(initialComment || "");
 
   // Update state when initial values change
   useEffect(() => {
     setRating(initialRating);
-    setComment(initialComment);
+    setComment(initialComment || "");
   }, [initialRating, initialComment]);
 
   const handleSubmit = () => {
@@ -114,7 +114,7 @@ const RatingModal = ({
                 maxLength={500}
               />
               <Text style={styles.characterCount}>
-                {comment.length} / 500 characters
+                {(comment || "").length} / 500 characters
               </Text>
             </View>
 

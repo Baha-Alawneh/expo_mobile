@@ -37,11 +37,14 @@ const MyOfferingScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [allFeedback, setAllFeedback] = useState([]);
   const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
+  const [showTypeSelection, setShowTypeSelection] = useState(false);
+  const [offeringType, setOfferingType] = useState("");
   const [offeringData, setOfferingData] = useState({
     name: "",
     description: "",
     price: "",
     offering_photos: [],
+    type: "",
   });
 
   const fetchMyOffering = async () => {
@@ -99,6 +102,26 @@ const MyOfferingScreen = ({ navigation }) => {
     fetchMyOffering();
   };
 
+  const handleAddOffering = () => {
+    setEditingOffering(false);
+    setOfferingData({
+      name: "",
+      description: "",
+      price: "",
+      offering_photos: [],
+      type: "",
+    });
+    // Show type selection modal first for new offerings
+    setShowTypeSelection(true);
+  };
+
+  const handleTypeSelection = (type) => {
+    setOfferingType(type);
+    setOfferingData((prev) => ({ ...prev, type }));
+    setShowTypeSelection(false);
+    setShowAddOffering(true);
+  };
+
   const pickOfferingImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -130,6 +153,12 @@ const MyOfferingScreen = ({ navigation }) => {
       return;
     }
 
+    // Validate type only for new offerings (not editing)
+    if (!editingOffering && !offeringData.type && !offeringType) {
+      Alert.alert("Error", "Please select an offering type");
+      return;
+    }
+
     try {
       const userId = await AsyncStorage.getItem("userId");
 
@@ -138,6 +167,7 @@ const MyOfferingScreen = ({ navigation }) => {
         description: offeringData.description.trim(),
         price: offeringData.price?.trim() || "",
         offering_photos: offeringData.offering_photos || [],
+        type: offeringData.type || offeringType,
       };
 
       let result;
@@ -257,16 +287,7 @@ const MyOfferingScreen = ({ navigation }) => {
       </Text>
       <TouchableOpacity
         style={styles.addOfferingButtonLarge}
-        onPress={() => {
-          setEditingOffering(false);
-          setOfferingData({
-            name: "",
-            description: "",
-            price: "",
-            offering_photos: [],
-          });
-          setShowAddOffering(true);
-        }}
+        onPress={handleAddOffering}
       >
         <Ionicons name="add-circle" size={24} color="#fff" />
         <Text style={[styles.addOfferingButtonLargeText, { marginLeft: 8 }]}>
@@ -354,16 +375,7 @@ const MyOfferingScreen = ({ navigation }) => {
             {!myOffering && !error && (
               <TouchableOpacity
                 style={styles.addOfferingButton}
-                onPress={() => {
-                  setEditingOffering(false);
-                  setOfferingData({
-                    name: "",
-                    description: "",
-                    price: "",
-                    offering_photos: [],
-                  });
-                  setShowAddOffering(true);
-                }}
+                onPress={handleAddOffering}
               >
                 <Ionicons name="add" size={20} color="#fff" />
                 <Text style={[styles.addOfferingText, { marginLeft: 8 }]}>
@@ -526,7 +538,11 @@ const MyOfferingScreen = ({ navigation }) => {
                   <Ionicons name="close" size={28} color="#333" />
                 </TouchableOpacity>
               </View>
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+              >
                 <Text style={styles.inputLabel}>Offering Name</Text>
                 <TextInput
                   style={styles.input}
@@ -611,6 +627,57 @@ const MyOfferingScreen = ({ navigation }) => {
                   </Text>
                 </TouchableOpacity>
               </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Offering Type Selection Modal */}
+        <Modal
+          visible={showTypeSelection}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowTypeSelection(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>What is your offering type?</Text>
+                <TouchableOpacity onPress={() => setShowTypeSelection(false)}>
+                  <Ionicons name="close" size={28} color="#333" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.typeSelectionContainer}>
+                <Text style={styles.typeSelectionSubtitle}>
+                  Select your offering type to continue
+                </Text>
+                
+                <TouchableOpacity
+                  style={styles.typeOptionButton}
+                  onPress={() => handleTypeSelection('sponser')}
+                >
+                  <View style={styles.typeOptionIcon}>
+                    <Ionicons name="trophy" size={40} color={Colors.mainColor} />
+                  </View>
+                  <Text style={styles.typeOptionTitle}>Sponser</Text>
+                  <Text style={styles.typeOptionDescription}>
+                    Provide sponsorship opportunities
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.typeOptionButton}
+                  onPress={() => handleTypeSelection('service')}
+                >
+                  <View style={styles.typeOptionIcon}>
+                    <Ionicons name="briefcase" size={40} color={Colors.mainColor} />
+                  </View>
+                  <Text style={styles.typeOptionTitle}>Service</Text>
+                  <Text style={styles.typeOptionDescription}>
+                    Offer professional services
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -850,7 +917,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    maxHeight: "85%",
+    height: "90%",
     paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
   modalHeader: {
@@ -968,6 +1035,44 @@ const styles = StyleSheet.create({
   },
   feedbackSection: {
     marginTop: 16,
+  },
+  typeSelectionContainer: {
+    padding: 20,
+    gap: 16,
+  },
+  typeSelectionSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  typeOptionButton: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+    gap: 8,
+  },
+  typeOptionIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.mainColor + "20",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  typeOptionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  typeOptionDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
   },
 });
 

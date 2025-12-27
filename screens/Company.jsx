@@ -27,14 +27,24 @@ import {
   subscribeToUnreadCount,
   createOrUpdateUser,
 } from "../utils/chatService";
+import {
+  subscribeToTopic,
+  addNotificationReceivedListener,
+  loadNotifications,
+  saveNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+  getIconColorForType,
+} from "../utils/notificationService";
 
 const Company = ({ navigation }) => {
   // States
   const [activeTab, setActiveTab] = useState("profile");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
 
   // Company data
   const [companyData, setCompanyData] = useState({
@@ -48,40 +58,95 @@ const Company = ({ navigation }) => {
     category: "",
   });
 
-  // Mock notifications
-  const notifications = [
-    {
-      id: 1,
-      type: "approval",
-      title: "Booth Confirmed!",
-      message: "Your booth reservation has been approved for the exhibition.",
-      time: "2 hours ago",
-      read: false,
-      icon: "checkmark-circle",
-      iconColor: "#4CAF50",
-    },
-    {
-      id: 2,
-      type: "message",
-      title: "New Message",
-      message:
-        "A student is interested in your offering and sent you a message.",
-      time: "5 hours ago",
-      read: false,
-      icon: "mail",
-      iconColor: Colors.mainColor,
-    },
-    {
-      id: 3,
-      type: "info",
-      title: "Expo Reminder",
-      message: "TEDI-Expo starts in 3 days. Make sure your booth is ready!",
-      time: "2 days ago",
-      read: true,
-      icon: "information-circle",
-      iconColor: "#FF9800",
-    },
-  ];
+  // Initialize notifications
+  useEffect(() => {
+    let unsubscribe = null;
+    
+    const initializeNotifications = async () => {
+      try {
+        // Get userId from AsyncStorage
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) {
+          console.log("No userId found, skipping notification setup");
+          return;
+        }
+
+        // Load saved notifications (user-specific)
+        const savedNotifications = await loadNotifications(userId);
+        
+        // Remove duplicates based on notification ID
+        const uniqueNotifications = Array.from(
+          new Map(savedNotifications.map(n => [n.id, n])).values()
+        );
+        
+        setNotifications(uniqueNotifications);
+        setUnreadCount(uniqueNotifications.filter((n) => !n.read).length);
+        
+        // Save deduplicated notifications back to AsyncStorage
+        if (uniqueNotifications.length !== savedNotifications.length) {
+          await saveNotifications(uniqueNotifications, userId);
+        }
+
+        // Subscribe to Firestore notifications for this user
+        unsubscribe = await subscribeToTopic(
+          "company",
+          userId,
+          async (newNotifications) => {
+            // New notifications received from Firestore (array)
+            const current = await loadNotifications(userId);
+            
+            // Filter out notifications that already exist
+            const uniqueNew = newNotifications.filter(
+              notification => !current.some(n => n.id === notification.id)
+            );
+            
+            if (uniqueNew.length === 0) {
+              return; // All notifications already exist
+            }
+            
+            const updatedNotifications = [...uniqueNew, ...current];
+            setNotifications(updatedNotifications);
+            setUnreadCount((prev) => prev + uniqueNew.length);
+            await saveNotifications(updatedNotifications, userId);
+          }
+        );
+      } catch (error) {
+        console.error("Error initializing notifications:", error);
+      }
+    };
+
+    initializeNotifications();
+    
+    // Return cleanup function
+    return () => {
+      if (unsubscribe && typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  // Handle notification tap
+  const handleNotificationTap = async (notification) => {
+    if (!notification.read) {
+      const updated = await markNotificationAsRead(notification.id);
+      setNotifications(updated);
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  // Handle notification delete
+  const handleDeleteNotification = async (notificationId, wasRead) => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      const updated = await deleteNotification(userId, notificationId);
+      setNotifications(updated);
+      if (!wasRead) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -430,6 +495,12 @@ const Company = ({ navigation }) => {
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.iconButton}
+                onPress={() => navigation.navigate("ChatbotScreen")}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={28} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
                 onPress={() => navigation.navigate("ChatListScreen")}
               >
                 <Ionicons name="chatbubbles-outline" size={28} color="#fff" />
@@ -594,43 +665,66 @@ const Company = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
               <ScrollView showsVerticalScrollIndicator={false}>
-                {notifications.map((notification) => (
-                  <TouchableOpacity
-                    key={notification.id}
-                    style={[
-                      styles.notificationItem,
-                      !notification.read && styles.unreadNotification,
-                    ]}
-                    onPress={() => {
-                      setUnreadCount(Math.max(0, unreadCount - 1));
-                    }}
-                  >
-                    <View
+                {notifications.length === 0 ? (
+                  <View style={styles.emptyNotifications}>
+                    <Ionicons
+                      name="notifications-off-outline"
+                      size={64}
+                      color="#ccc"
+                    />
+                    <Text style={styles.emptyNotificationsText}>
+                      No notifications yet
+                    </Text>
+                  </View>
+                ) : (
+                  notifications.map((notification) => (
+                    <TouchableOpacity
+                      key={notification.id}
                       style={[
-                        styles.notificationIconContainer,
-                        { backgroundColor: notification.iconColor + "20" },
+                        styles.notificationItem,
+                        !notification.read && styles.unreadNotification,
                       ]}
+                      onPress={() => handleNotificationTap(notification)}
                     >
-                      <Ionicons
-                        name={notification.icon}
-                        size={24}
-                        color={notification.iconColor}
-                      />
-                    </View>
-                    <View style={styles.notificationContent}>
-                      <Text style={styles.notificationTitle}>
-                        {notification.title}
-                      </Text>
-                      <Text style={styles.notificationMessage}>
-                        {notification.message}
-                      </Text>
-                      <Text style={styles.notificationTime}>
-                        {notification.time}
-                      </Text>
-                    </View>
-                    {!notification.read && <View style={styles.unreadDot} />}
-                  </TouchableOpacity>
-                ))}
+                      <View
+                        style={[
+                          styles.notificationIconContainer,
+                          {
+                            backgroundColor:
+                              getIconColorForType(notification.type) + "20",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={notification.icon}
+                          size={24}
+                          color={getIconColorForType(notification.type)}
+                        />
+                      </View>
+                      <View style={styles.notificationContent}>
+                        <Text style={styles.notificationTitle}>
+                          {notification.title}
+                        </Text>
+                        <Text style={styles.notificationMessage}>
+                          {notification.message}
+                        </Text>
+                        <Text style={styles.notificationTime}>
+                          {notification.time}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteNotificationButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleDeleteNotification(notification.id, notification.read);
+                        }}
+                      >
+                        <Ionicons name="close-circle" size={20} color="#FF7675" />
+                      </TouchableOpacity>
+                      {!notification.read && <View style={styles.unreadDot} />}
+                    </TouchableOpacity>
+                  ))
+                )}
               </ScrollView>
             </View>
           </View>
@@ -1040,6 +1134,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.mainColor,
     marginTop: 5,
   },
+  deleteNotificationButton: {
+    padding: 5,
+    marginLeft: 8,
+  },
   editPhotoContainer: {
     alignSelf: "center",
     marginVertical: 20,
@@ -1104,6 +1202,16 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  emptyNotifications: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyNotificationsText: {
+    fontSize: 16,
+    color: "#999",
+    marginTop: 16,
   },
 });
 

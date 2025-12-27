@@ -177,12 +177,6 @@ const Login = () => {
               <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
                 <Ionicons name="logo-google" size={24} color={Colors.WHITE} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                <Ionicons name="logo-apple" size={24} color={Colors.WHITE} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                <Ionicons name="logo-facebook" size={24} color={Colors.WHITE} />
-              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -375,7 +369,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   socialButton: {
-    width: 56,
+    width: "70%",
     height: 56,
     borderRadius: 16,
     backgroundColor: "rgba(255, 255, 255, 0.08)",
