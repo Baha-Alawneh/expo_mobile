@@ -79,6 +79,8 @@ export const loginUser = async (body, navigation) => {
         navigation.navigate("Student");
       } else if (role === "company") {
         navigation.navigate("Company");
+      } else if (role === "admin") {
+        navigation.navigate("Admin");
       }
 
       return {

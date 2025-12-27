@@ -297,25 +297,6 @@ const SignUp = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or continue with</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Social Login */}
-            <View style={styles.socialContainer}>
-              <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                <Ionicons name="logo-google" size={24} color={Colors.WHITE} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                <Ionicons name="logo-apple" size={24} color={Colors.WHITE} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-                <Ionicons name="logo-facebook" size={24} color={Colors.WHITE} />
-              </TouchableOpacity>
-            </View>
           </View>
         </ScrollView>
       </LinearGradient>
@@ -440,6 +421,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     borderWidth: 1,
+    marginRight: 10,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
   userTypeButtonSelected: {

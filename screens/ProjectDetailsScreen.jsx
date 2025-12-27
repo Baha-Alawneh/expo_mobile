@@ -24,7 +24,8 @@ import {
 import { getUserId } from "../utils/auth";
 
 const ProjectDetailsScreen = ({ navigation, route }) => {
-  const { project } = route.params || {};
+  const { project, fromAdmin } = route.params || {};
+  
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [userFeedback, setUserFeedback] = useState(null);
   const [allFeedback, setAllFeedback] = useState([]);
@@ -58,14 +59,24 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
     try {
       setLoadingFeedback(true);
 
+      // Validate project_id before making API calls
+      if (!project?.project_id) {
+        console.error("Cannot load feedback: project_id is missing");
+        return;
+      }
+
       // Get all feedback for the project
       const feedbackResponse = await getProjectFeedback(project.project_id);
-      if (feedbackResponse.success) {
-        setAllFeedback(feedbackResponse.data.feedback || []);
+      if (feedbackResponse?.success && feedbackResponse?.data) {
+        setAllFeedback(Array.isArray(feedbackResponse.data.feedback) ? feedbackResponse.data.feedback : []);
         setFeedbackStats({
           average: feedbackResponse.data.average_rating || 0,
           count: feedbackResponse.data.total_ratings || 0,
         });
+      } else {
+        // Set defaults if response is invalid
+        setAllFeedback([]);
+        setFeedbackStats({ average: 0, count: 0 });
       }
 
       // Get user's own feedback if logged in
@@ -73,15 +84,22 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
         const userFeedbackResponse = await getUserProjectFeedback(
           project.project_id
         );
-        if (userFeedbackResponse.success && userFeedbackResponse.data) {
+        if (userFeedbackResponse?.success && userFeedbackResponse?.data) {
           setUserFeedback(userFeedbackResponse.data);
+        } else {
+          setUserFeedback(null);
         }
       } catch (error) {
         // User not logged in or hasn't rated yet
         console.log("No user feedback yet");
+        setUserFeedback(null);
       }
     } catch (error) {
       console.error("Error loading feedback:", error);
+      // Set safe defaults on error
+      setAllFeedback([]);
+      setFeedbackStats({ average: 0, count: 0 });
+      setUserFeedback(null);
     } finally {
       setLoadingFeedback(false);
     }
@@ -90,20 +108,33 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
   const handleRatingSubmit = async ({ rating, comment }) => {
     try {
       setSubmitting(true);
+      
+      // Validate project_id before submission
+      if (!project?.project_id) {
+        Alert.alert("Error", "Invalid project data. Please try again.");
+        return;
+      }
+      
       console.log("📝 Submitting rating:", {
         project_id: project.project_id,
         rating,
-        comment,
+        comment: comment || "",
         projectKeys: Object.keys(project),
       });
-      await submitProjectFeedback(project.project_id, rating, comment);
+      
+      await submitProjectFeedback(project.project_id, rating, comment || "");
       Alert.alert("Success", "Your rating has been submitted!");
       setShowRatingModal(false);
-      loadFeedbackData(); // Reload feedback
+      
+      // Reload feedback with a small delay to ensure backend has processed
+      setTimeout(() => {
+        loadFeedbackData();
+      }, 500);
     } catch (error) {
+      console.error("❌ Error submitting rating:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to submit rating"
+        error.response?.data?.message || error.message || "Failed to submit rating"
       );
     } finally {
       setSubmitting(false);
@@ -216,42 +247,44 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
             </View>
 
             {/* Rating Section */}
-            <View style={styles.modernProjectSection}>
-              <View style={styles.modernSectionHeader}>
-                <Ionicons name="star" size={20} color="#FFD700" />
-                <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
-                  Ratings & Reviews
-                </Text>
-              </View>
-              <View style={styles.ratingContainer}>
-                <View style={styles.ratingOverview}>
-                  <Text style={styles.ratingValue}>
-                    {feedbackStats.average.toFixed(1)}
-                  </Text>
-                  <StarRating rating={feedbackStats.average} size={24} />
-                  <Text style={styles.ratingCount}>
-                    {feedbackStats.count}{" "}
-                    {feedbackStats.count === 1 ? "rating" : "ratings"}
+            {!fromAdmin && (
+              <View style={styles.modernProjectSection}>
+                <View style={styles.modernSectionHeader}>
+                  <Ionicons name="star" size={20} color="#FFD700" />
+                  <Text style={[styles.modernSectionTitle, { marginLeft: 8 }]}>
+                    Ratings & Reviews
                   </Text>
                 </View>
-                {!isOwner && (
-                  <TouchableOpacity
-                    style={styles.rateButton}
-                    onPress={() => setShowRatingModal(true)}
-                  >
-                    <Ionicons name="star-outline" size={20} color="#fff" />
-                    <Text style={styles.rateButtonText}>
-                      {userFeedback ? "Edit Rating" : "Rate Project"}
+                <View style={styles.ratingContainer}>
+                  <View style={styles.ratingOverview}>
+                    <Text style={styles.ratingValue}>
+                      {feedbackStats.average.toFixed(1)}
                     </Text>
-                  </TouchableOpacity>
+                    <StarRating rating={feedbackStats.average} size={24} />
+                    <Text style={styles.ratingCount}>
+                      {feedbackStats.count}{" "}
+                      {feedbackStats.count === 1 ? "rating" : "ratings"}
+                    </Text>
+                  </View>
+                  {!isOwner && (
+                    <TouchableOpacity
+                      style={styles.rateButton}
+                      onPress={() => setShowRatingModal(true)}
+                    >
+                      <Ionicons name="star-outline" size={20} color="#fff" />
+                      <Text style={styles.rateButtonText}>
+                        {userFeedback ? "Edit Rating" : "Rate Project"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {isOwner && allFeedback && allFeedback.length > 0 && (
+                  <View style={styles.feedbackSection}>
+                    <FeedbackList feedbackList={allFeedback} />
+                  </View>
                 )}
               </View>
-              {isOwner && allFeedback.length > 0 && (
-                <View style={styles.feedbackSection}>
-                  <FeedbackList feedback={allFeedback} />
-                </View>
-              )}
-            </View>
+            )}
 
             {/* Description Section */}
             {project.description ? (
@@ -326,7 +359,7 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
             )}
 
             {/* Booth Information */}
-            {project.booth && (
+            {!fromAdmin && project.booth && (
               <View style={styles.modernProjectSection}>
                 <View style={styles.modernSectionHeader}>
                   <Ionicons

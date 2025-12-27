@@ -5,10 +5,13 @@ import { API_URL } from "../../constants/config";
 // Get all feedback for a project
 export const getProjectFeedback = async (projectId) => {
   try {
+    if (!projectId) {
+      throw new Error("Project ID is required");
+    }
     const response = await axios.get(
       `${API_URL}/feedback/project/${projectId}`
     );
-    return response.data;
+    return response.data || { success: false, data: { feedback: [], average_rating: 0, total_ratings: 0 } };
   } catch (error) {
     console.error("Error fetching project feedback:", error);
     throw error;
@@ -65,10 +68,21 @@ export const getUserOfferingFeedback = async (offeringId) => {
 // Create or update feedback for a project
 export const submitProjectFeedback = async (projectId, rating, comment) => {
   try {
+    if (!projectId) {
+      throw new Error("Project ID is required");
+    }
+    if (!rating || rating < 1 || rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+    
     const token = await AsyncStorage.getItem("token");
+    
+    // Ensure comment is always a string (empty string if not provided)
+    const safeComment = comment !== undefined && comment !== null ? String(comment) : "";
+    
     const response = await axios.post(
       `${API_URL}/feedback/project/${projectId}`,
-      { rating, comment },
+      { rating, comment: safeComment },
       {
         headers: { Authorization: `Bearer ${token}` },
       }

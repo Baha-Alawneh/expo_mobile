@@ -38,6 +38,8 @@ const MyProjectScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [allFeedback, setAllFeedback] = useState([]);
   const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
+  const [showTypeSelection, setShowTypeSelection] = useState(false);
+  const [studentType, setStudentType] = useState("");
   const [projectData, setProjectData] = useState({
     title: "",
     description: "",
@@ -45,6 +47,7 @@ const MyProjectScreen = ({ navigation }) => {
     project_photos: [],
     github_link: "",
     partner_email: "",
+    type: "",
   });
 
   // Helper function to get status color and text
@@ -153,6 +156,28 @@ const MyProjectScreen = ({ navigation }) => {
     fetchMyProject();
   };
 
+  const handleAddProject = () => {
+    setEditingProject(false);
+    setProjectData({
+      title: "",
+      description: "",
+      video_url: "",
+      project_photos: [],
+      github_link: "",
+      partner_email: "",
+      type: "",
+    });
+    // Show type selection modal first for new projects
+    setShowTypeSelection(true);
+  };
+
+  const handleTypeSelection = (type) => {
+    setStudentType(type);
+    setProjectData((prev) => ({ ...prev, type }));
+    setShowTypeSelection(false);
+    setShowAddProject(true);
+  };
+
   const pickProjectImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -184,6 +209,12 @@ const MyProjectScreen = ({ navigation }) => {
       return;
     }
 
+    // Validate type only for new projects (not editing)
+    if (!editingProject && !projectData.type && !studentType) {
+      Alert.alert("Error", "Please select a student type");
+      return;
+    }
+
     try {
       const userId = await AsyncStorage.getItem("userId");
 
@@ -194,6 +225,7 @@ const MyProjectScreen = ({ navigation }) => {
         github_link: projectData.github_link?.trim() || "",
         partner_email: projectData.partner_email?.trim() || "",
         project_photos: projectData.project_photos || [],
+        type: projectData.type || studentType,
       };
 
       let result;
@@ -326,18 +358,7 @@ const MyProjectScreen = ({ navigation }) => {
       </Text>
       <TouchableOpacity
         style={styles.addProjectButtonLarge}
-        onPress={() => {
-          setEditingProject(false);
-          setProjectData({
-            title: "",
-            description: "",
-            video_url: "",
-            project_photos: [],
-            github_link: "",
-            partner_email: "",
-          });
-          setShowAddProject(true);
-        }}
+        onPress={handleAddProject}
       >
         <Ionicons name="add-circle" size={24} color="#fff" />
         <Text style={[styles.addProjectButtonLargeText, { marginLeft: 8 }]}>
@@ -425,18 +446,7 @@ const MyProjectScreen = ({ navigation }) => {
             {!myProject && !error && (
               <TouchableOpacity
                 style={styles.addProjectButton}
-                onPress={() => {
-                  setEditingProject(false);
-                  setProjectData({
-                    title: "",
-                    description: "",
-                    video_url: "",
-                    project_photos: [],
-                    github_link: "",
-                    partner_email: "",
-                  });
-                  setShowAddProject(true);
-                }}
+                onPress={handleAddProject}
               >
                 <Ionicons name="add" size={20} color="#fff" />
                 <Text style={[styles.addProjectText, { marginLeft: 8 }]}>
@@ -734,7 +744,11 @@ const MyProjectScreen = ({ navigation }) => {
                   <Ionicons name="close" size={28} color="#333" />
                 </TouchableOpacity>
               </View>
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+              >
                 <Text style={styles.inputLabel}>Project Title</Text>
                 <TextInput
                   style={styles.input}
@@ -848,6 +862,57 @@ const MyProjectScreen = ({ navigation }) => {
                   </Text>
                 </TouchableOpacity>
               </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Student Type Selection Modal */}
+        <Modal
+          visible={showTypeSelection}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowTypeSelection(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>What is your student type?</Text>
+                <TouchableOpacity onPress={() => setShowTypeSelection(false)}>
+                  <Ionicons name="close" size={28} color="#333" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.typeSelectionContainer}>
+                <Text style={styles.typeSelectionSubtitle}>
+                  Select your project type to continue
+                </Text>
+                
+                <TouchableOpacity
+                  style={styles.typeOptionButton}
+                  onPress={() => handleTypeSelection('science')}
+                >
+                  <View style={styles.typeOptionIcon}>
+                    <Ionicons name="flask" size={40} color={Colors.mainColor} />
+                  </View>
+                  <Text style={styles.typeOptionTitle}>Science</Text>
+                  <Text style={styles.typeOptionDescription}>
+                    For science-related projects
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.typeOptionButton}
+                  onPress={() => handleTypeSelection('engineering')}
+                >
+                  <View style={styles.typeOptionIcon}>
+                    <Ionicons name="construct" size={40} color={Colors.mainColor} />
+                  </View>
+                  <Text style={styles.typeOptionTitle}>Engineering</Text>
+                  <Text style={styles.typeOptionDescription}>
+                    For engineering-related projects
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -1194,7 +1259,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    maxHeight: "85%",
+    height: "90%",
     paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
   modalHeader: {
@@ -1312,6 +1377,44 @@ const styles = StyleSheet.create({
   },
   feedbackSection: {
     marginTop: 16,
+  },
+  typeSelectionContainer: {
+    padding: 20,
+    gap: 16,
+  },
+  typeSelectionSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  typeOptionButton: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+    gap: 8,
+  },
+  typeOptionIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.mainColor + "20",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  typeOptionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  typeOptionDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
   },
 });
 

@@ -8,6 +8,7 @@ import Verify from "../screens/Verify";
 import Student from "../screens/Student";
 import Company from "../screens/Company";
 import Visitor from "../screens/Visitor";
+import Admin from "../screens/Admin";
 import MyProjectScreen from "../screens/MyProjectScreen";
 import MyOfferingScreen from "../screens/MyOfferingScreen";
 import ProjectDetailsScreen from "../screens/ProjectDetailsScreen";
@@ -15,6 +16,7 @@ import CompanyDetailsScreen from "../screens/CompanyDetailsScreen";
 import StudentDetailsScreen from "../screens/StudentDetailsScreen";
 import ChatListScreen from "../screens/ChatListScreen";
 import ConversationScreen from "../screens/ConversationScreen";
+import ChatbotScreen from "../screens/ChatbotScreen";
 import Toast from "react-native-toast-message";
 const Stack = createNativeStackNavigator();
 
@@ -55,6 +57,11 @@ export default function App() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="Admin"
+            component={Admin}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="MyProject"
             component={MyProjectScreen}
             options={{ headerShown: false }}
@@ -87,6 +94,11 @@ export default function App() {
           <Stack.Screen
             name="ConversationScreen"
             component={ConversationScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ChatbotScreen"
+            component={ChatbotScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>

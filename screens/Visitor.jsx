@@ -26,6 +26,25 @@ const Visitor = ({ navigation }) => {
           backgroundColor={Colors.mainColor}
         />
 
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Ionicons name="eye-outline" size={32} color="#fff" />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerGreeting}>Welcome</Text>
+              <Text style={styles.headerName}>Visitor</Text>
+            </View>
+          </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate("ChatbotScreen")}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Tab Navigation - No Header */}
         <View style={styles.tabContainer}>
           <ScrollView
@@ -124,6 +143,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FA",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.mainColor,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  headerTextContainer: {
+    marginLeft: 12,
+  },
+  headerGreeting: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+  },
+  headerName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconButton: {
+    marginLeft: 12,
+    padding: 8,
+  },
   tabContainer: {
     backgroundColor: "#fff",
     elevation: 4,
@@ -131,7 +189,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    paddingTop: Platform.OS === "ios" ? 10 : 50,
   },
   tabScroll: {
     paddingHorizontal: 10,
