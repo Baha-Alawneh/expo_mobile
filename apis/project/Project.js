@@ -165,7 +165,8 @@ export const getAllProjectsExceptMine = async (
 ) => {
   try {
     const headers = await getAuthHeaders();
-    let url = `${BASE_URL}/projects/all/except/${user_id}`;
+    // Backend now handles filtering automatically based on authenticated user
+    let url = `${BASE_URL}/projects`;
 
     // Add query parameters if sorting is specified
     const params = new URLSearchParams();

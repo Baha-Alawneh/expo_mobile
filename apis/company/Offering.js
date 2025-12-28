@@ -3,6 +3,7 @@ import { BASE_URL } from "../../constants/config";
 import { getAuthHeaders } from "../../utils/auth";
 
 // Get all offerings with optional sorting
+// Note: Backend automatically excludes the authenticated company's own offerings
 export const getAllOfferings = async (sortBy = null, sortOrder = "DESC") => {
   try {
     const headers = await getAuthHeaders();

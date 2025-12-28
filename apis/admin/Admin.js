@@ -75,13 +75,18 @@ export const getProjectsByStatus = async (status) => {
 };
 
 // Update Project Status (Approve/Reject)
-export const updateProjectStatus = async (projectId, status) => {
+export const updateProjectStatus = async (projectId, status, rejection_reason = null) => {
   try {
     const token = await AsyncStorage.getItem("token");
 
+    const body = { status };
+    if (status === "rejected" && rejection_reason) {
+      body.rejection_reason = rejection_reason;
+    }
+
     const response = await axios.patch(
       `${BASE_URL}/admin/projects/${projectId}/status`,
-      { status },
+      body,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -152,13 +157,18 @@ export const getOfferingsByStatus = async (status) => {
 };
 
 // Update Offering Status (Approve/Reject)
-export const updateOfferingStatus = async (offeringId, status) => {
+export const updateOfferingStatus = async (offeringId, status, rejection_reason = null) => {
   try {
     const token = await AsyncStorage.getItem("token");
 
+    const body = { status };
+    if (status === "rejected" && rejection_reason) {
+      body.rejection_reason = rejection_reason;
+    }
+
     const response = await axios.patch(
       `${BASE_URL}/admin/offerings/${offeringId}/status`,
-      { status },
+      body,
       {
         headers: {
           Authorization: `Bearer ${token}`,

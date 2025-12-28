@@ -130,12 +130,22 @@ const MyProjectScreen = ({ navigation }) => {
       console.log("Feedback response:", feedbackResponse);
 
       if (feedbackResponse.success) {
-        const feedback = feedbackResponse.data.feedback || [];
+        const allFeedbackData = feedbackResponse.data.feedback || [];
         const average = feedbackResponse.data.average_rating || 0;
         const count = feedbackResponse.data.total_ratings || 0;
 
-        console.log("Setting feedback:", { feedback, average, count });
-        setAllFeedback(feedback);
+        // Filter to only show feedback with comments (non-empty)
+        const feedbackWithComments = allFeedbackData.filter(
+          (item) => item.comment && item.comment.trim().length > 0
+        );
+
+        console.log("Setting feedback:", { 
+          total: allFeedbackData.length,
+          withComments: feedbackWithComments.length, 
+          average, 
+          count 
+        });
+        setAllFeedback(feedbackWithComments);
         setFeedbackStats({
           average: average,
           count: count,
