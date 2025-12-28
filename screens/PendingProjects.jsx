@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
+  Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -25,6 +27,9 @@ const PendingProjects = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState(null);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [projectToReject, setProjectToReject] = useState(null);
 
   useEffect(() => {
     fetchProjects();
@@ -61,23 +66,26 @@ const PendingProjects = ({ navigation }) => {
   };
 
   const handleReject = (project) => {
-    Alert.alert(
-      "Reject Project",
-      `Are you sure you want to reject "${project.title || project.project_title}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: () => updateStatus(project.project_id, "rejected"),
-        },
-      ]
-    );
+    setProjectToReject(project);
+    setRejectionReason("");
+    setShowRejectionModal(true);
   };
 
-  const updateStatus = async (projectId, status) => {
+  const confirmRejection = async () => {
+    if (!rejectionReason.trim()) {
+      Alert.alert("Required", "Please provide a rejection reason.");
+      return;
+    }
+
+    setShowRejectionModal(false);
+    await updateStatus(projectToReject.project_id, "rejected", rejectionReason);
+    setProjectToReject(null);
+    setRejectionReason("");
+  };
+
+  const updateStatus = async (projectId, status, rejection_reason = null) => {
     setProcessingId(projectId);
-    const response = await updateProjectStatus(projectId, status);
+    const response = await updateProjectStatus(projectId, status, rejection_reason);
 
     if (response.success) {
       Alert.alert("Success", response.message);
@@ -321,6 +329,52 @@ const PendingProjects = ({ navigation }) => {
           </>
         )}
       </ScrollView>
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        visible={showRejectionModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowRejectionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Rejection Reason</Text>
+              <TouchableOpacity onPress={() => setShowRejectionModal(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              Please provide a reason for rejecting "{projectToReject?.title || projectToReject?.project_title}"
+            </Text>
+            <TextInput
+              style={styles.textArea}
+              multiline
+              numberOfLines={4}
+              placeholder="Enter rejection reason (required)"
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowRejectionModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, !rejectionReason.trim() && styles.disabledButton]}
+                onPress={confirmRejection}
+                disabled={!rejectionReason.trim()}
+              >
+                <Text style={styles.confirmButtonText}>Reject Project</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -538,6 +592,78 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#636E72",
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 24,
+    width: "90%",
+    maxWidth: 500,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2D3436",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#636E72",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  textArea: {
+    backgroundColor: "#F8F9FA",
+    borderWidth: 1,
+    borderColor: "#DFE6E9",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: "#2D3436",
+    minHeight: 100,
+    textAlignVertical: "top",
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: "#F8F9FA",
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#636E72",
+  },
+  confirmButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: "#FF7675",
+  },
+  confirmButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 

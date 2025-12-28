@@ -12,13 +12,16 @@ import {
   SafeAreaView,
   Platform,
   Alert,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "../constants/constants";
 import * as ImagePicker from "expo-image-picker";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
 import MapScreen from "./MapScreen";
+import ModernOfferingContent from "../components/company/ModernOfferingContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCompanyData, postCompanyData } from "../apis/company/Company";
 import { uploadCompanyFile } from "../apis/company/CompanyFiles";
@@ -36,15 +39,20 @@ import {
   deleteNotification,
   getIconColorForType,
 } from "../utils/notificationService";
+import ModernBottomNav from "../components/company/ModernBottomNav";
+import ModernSidebar from "../components/company/ModernSidebar";
 
 const Company = ({ navigation }) => {
   // States
   const [activeTab, setActiveTab] = useState("profile");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showNotificationDetails, setShowNotificationDetails] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   // Company data
   const [companyData, setCompanyData] = useState({
@@ -55,7 +63,6 @@ const Company = ({ navigation }) => {
     address: "",
     description: "",
     website_url: "",
-    category: "",
   });
 
   // Initialize notifications
@@ -127,11 +134,15 @@ const Company = ({ navigation }) => {
 
   // Handle notification tap
   const handleNotificationTap = async (notification) => {
+    // Mark as read if unread
     if (!notification.read) {
       const updated = await markNotificationAsRead(notification.id);
       setNotifications(updated);
       setUnreadCount((prev) => Math.max(0, prev - 1));
     }
+    // Open details modal
+    setSelectedNotification(notification);
+    setShowNotificationDetails(true);
   };
 
   // Handle notification delete
@@ -222,113 +233,106 @@ const Company = ({ navigation }) => {
 
   const renderProfileSection = () => (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-      <View style={styles.profileHeader}>
-        <View style={styles.profileImageContainer}>
-          <Image
-            source={{
-              uri:
-                companyData.profile_image ||
-                companyData.profile_image_url ||
-                "https://via.placeholder.com/150",
-            }}
-            style={styles.profileImageLarge}
-          />
-          <View style={styles.statusIndicator} />
-        </View>
-        <Text style={styles.profileNameLarge}>
-          {companyData.company_name || "Company Name"}
-        </Text>
-      </View>
+      {/* Single Premium Profile Card */}
+      <View style={styles.singleProfileCard}>
+        {/* Edit Button - Top Right Corner */}
+        <TouchableOpacity
+          style={styles.profileEditButton}
+          onPress={() => setShowEditProfile(true)}
+        >
+          <Ionicons name="create-outline" size={20} color="#1b2e4f" />
+        </TouchableOpacity>
 
-      {/* Contact Information Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="call-outline" size={24} color={Colors.mainColor} />
-          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
-            Contact Information
+        {/* Profile Header Section */}
+        <View style={styles.profileHeaderSection}>
+          <View style={styles.profileImageContainer}>
+            <Image
+              source={{
+                uri:
+                  companyData.profile_image ||
+                  companyData.profile_image_url ||
+                  "https://via.placeholder.com/150",
+              }}
+              style={styles.profileImageLarge}
+            />
+            <View style={styles.statusIndicator} />
+          </View>
+          <Text style={styles.profileNameLarge}>
+            {companyData.company_name || "Company Name"}
           </Text>
         </View>
-        <View style={styles.contactRow}>
-          <Ionicons name="mail" size={18} color={Colors.mainColor} />
-          <Text style={[styles.contactText, { marginLeft: 8 }]}>
-            {companyData.email || "Not set"}
+
+        {/* Elegant Divider */}
+        <View style={styles.sectionDivider} />
+
+        {/* Contact Information Section */}
+        <View style={styles.infoSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="call-outline" size={22} color={Colors.mainColor} />
+            <Text style={styles.sectionTitle}>Contact Information</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="mail" size={18} color="#64748b" />
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>
+                {companyData.email || "Not set"}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="call" size={18} color="#64748b" />
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>
+                {companyData.phone || "Not set"}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Elegant Divider */}
+        <View style={styles.sectionDivider} />
+
+        {/* Address Section */}
+        <View style={styles.infoSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="location-outline" size={22} color={Colors.mainColor} />
+            <Text style={styles.sectionTitle}>Address</Text>
+          </View>
+          <Text style={styles.addressText}>
+            {companyData.address || "Not set"}
           </Text>
         </View>
-        <View style={styles.contactRow}>
-          <Ionicons name="call" size={18} color={Colors.mainColor} />
-          <Text style={[styles.contactText, { marginLeft: 8 }]}>
-            {companyData.phone || "Not set"}
+
+        {/* Elegant Divider */}
+        <View style={styles.sectionDivider} />
+
+        {/* About Section */}
+        <View style={styles.infoSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="document-text-outline" size={22} color={Colors.mainColor} />
+            <Text style={styles.sectionTitle}>About Company</Text>
+          </View>
+          <Text style={styles.bioText}>
+            {companyData.description || "No description available"}
+          </Text>
+        </View>
+
+        {/* Elegant Divider */}
+        <View style={styles.sectionDivider} />
+
+        {/* Website Section */}
+        <View style={styles.infoSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="globe-outline" size={22} color={Colors.mainColor} />
+            <Text style={styles.sectionTitle}>Website</Text>
+          </View>
+          <Text style={[styles.infoValue, styles.linkText]}>
+            {companyData.website_url || "Not set"}
           </Text>
         </View>
       </View>
-
-      {/* Address Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons
-            name="location-outline"
-            size={24}
-            color={Colors.mainColor}
-          />
-          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Address</Text>
-        </View>
-        <Text style={styles.addressText}>
-          {companyData.address || "Not set"}
-        </Text>
-      </View>
-
-      {/* Description Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons
-            name="document-text-outline"
-            size={24}
-            color={Colors.mainColor}
-          />
-          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
-            About Company
-          </Text>
-        </View>
-        <Text style={styles.bioText}>
-          {companyData.description || "No description"}
-        </Text>
-      </View>
-
-      {/* Category Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons
-            name="pricetag-outline"
-            size={24}
-            color={Colors.mainColor}
-          />
-          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Category</Text>
-        </View>
-        <Text style={styles.addressText}>
-          {companyData.category || "Not set"}
-        </Text>
-      </View>
-
-      {/* Website Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="globe-outline" size={24} color={Colors.mainColor} />
-          <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Website</Text>
-        </View>
-        <Text style={[styles.addressText, styles.linkText]}>
-          {companyData.website_url || "Not set"}
-        </Text>
-      </View>
-
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => setShowEditProfile(true)}
-      >
-        <Ionicons name="create-outline" size={20} color="#fff" />
-        <Text style={[styles.editButtonText, { marginLeft: 8 }]}>
-          Edit Profile
-        </Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 
@@ -359,7 +363,6 @@ const Company = ({ navigation }) => {
           address: fetchedData.address || "",
           description: fetchedData.description || "",
           website_url: fetchedData.website_url || "",
-          category: fetchedData.category || "",
           profile_image:
             fetchedData.profile_image_url || fetchedData.profile_image || "",
           profile_image_url: fetchedData.profile_image_url || "",
@@ -403,7 +406,6 @@ const Company = ({ navigation }) => {
         setCompanyData((prev) => ({
           ...prev,
           ...result.data,
-          category: result.data.category || prev.category,
           website_url: result.data.website_url || prev.website_url,
         }));
 
@@ -462,6 +464,18 @@ const Company = ({ navigation }) => {
     initializeChat();
   }, []);
 
+  const handleNavigateFromSidebar = (route) => {
+    if (route === "map") {
+      setActiveTab("map");
+    } else {
+      navigation.navigate(route);
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -470,21 +484,29 @@ const Company = ({ navigation }) => {
           backgroundColor={Colors.mainColor}
         />
 
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Modern Header with Gradient */}
+        <LinearGradient
+          colors={[Colors.mainColor, "#2d4a73", "#3d5a83"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <Image
-                source={{
-                  uri:
-                    companyData.profile_image ||
-                    companyData.profile_image_url ||
-                    "https://via.placeholder.com/150",
-                }}
-                style={styles.headerPhoto}
-              />
+              <View style={styles.avatarWrapper}>
+                <Image
+                  source={{
+                    uri:
+                      companyData.profile_image ||
+                      companyData.profile_image_url ||
+                      "https://via.placeholder.com/150",
+                  }}
+                  style={styles.headerPhoto}
+                />
+                <View style={styles.onlineStatusDot} />
+              </View>
               <View>
-                <Text style={styles.headerGreeting}>Welcome back,</Text>
+                <Text style={styles.headerGreeting}>Welcome back 👋</Text>
                 <Text style={styles.headerName}>
                   {companyData.company_name
                     ? companyData.company_name.split(" ")[0]
@@ -495,159 +517,63 @@ const Company = ({ navigation }) => {
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.iconButton}
-                onPress={() => navigation.navigate("ChatbotScreen")}
-              >
-                <Ionicons name="chatbubble-ellipses-outline" size={28} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => navigation.navigate("ChatListScreen")}
-              >
-                <Ionicons name="chatbubbles-outline" size={28} color="#fff" />
-                {chatUnreadCount > 0 && (
-                  <View style={styles.notificationBadge}>
-                    <Text style={styles.badgeText}>
-                      {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconButton}
                 onPress={() => setShowNotifications(true)}
+                activeOpacity={0.7}
               >
-                <Ionicons name="notifications-outline" size={28} color="#fff" />
-                {unreadCount > 0 && (
-                  <View style={styles.notificationBadge}>
-                    <Text style={styles.badgeText}>{unreadCount}</Text>
-                  </View>
-                )}
+                <View style={styles.iconButtonInner}>
+                  <Ionicons name="notifications-outline" size={24} color="#fff" />
+                  {unreadCount > 0 && (
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.badgeText}>
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setShowSidebar(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.iconButtonInner}>
+                  <Ionicons name="menu" size={24} color="#fff" />
+                </View>
               </TouchableOpacity>
             </View>
           </View>
+        </LinearGradient>
+
+        {/* Content Area - Fixed between header and bottom nav */}
+        <View style={styles.contentContainer}>
+          {activeTab === "profile" && renderProfileSection()}
+          {activeTab === "offering" && (
+            <ModernOfferingContent navigation={navigation} />
+          )}
+          {activeTab === "projects" && (
+            <OtherProjectsScreen navigation={navigation} />
+          )}
+          {activeTab === "companies" && (
+            <CompaniesScreen navigation={navigation} />
+          )}
+          {activeTab === "map" && (
+            <MapScreen
+              studentProject={companyData.company_name || "No Company Name"}
+            />
+          )}
         </View>
 
-        {/* Tab Navigation */}
-        <View style={styles.tabContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabScroll}
-          >
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "profile" && styles.activeTab]}
-              onPress={() => setActiveTab("profile")}
-            >
-              <Ionicons
-                name={activeTab === "profile" ? "business" : "business-outline"}
-                size={20}
-                color={activeTab === "profile" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "profile" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Profile
-              </Text>
-            </TouchableOpacity>
+        {/* Modern Bottom Navigation */}
+        <ModernBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
-            <TouchableOpacity
-              style={styles.tab}
-              onPress={() => navigation.navigate("MyOffering")}
-            >
-              <Ionicons
-                name="pricetag-outline"
-                size={20}
-                color={Colors.mainColor}
-              />
-              <Text style={[styles.tabText, { marginLeft: 8 }]}>
-                My Offering
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "projects" && styles.activeTab]}
-              onPress={() => setActiveTab("projects")}
-            >
-              <Ionicons
-                name={
-                  activeTab === "projects" ? "briefcase" : "briefcase-outline"
-                }
-                size={20}
-                color={activeTab === "projects" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "projects" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Projects
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === "companies" && styles.activeTab,
-              ]}
-              onPress={() => setActiveTab("companies")}
-            >
-              <Ionicons
-                name={activeTab === "companies" ? "people" : "people-outline"}
-                size={20}
-                color={activeTab === "companies" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "companies" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Other Companies
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "map" && styles.activeTab]}
-              onPress={() => setActiveTab("map")}
-            >
-              <Ionicons
-                name={activeTab === "map" ? "map" : "map-outline"}
-                size={20}
-                color={activeTab === "map" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "map" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Map
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-
-        {/* Content */}
-        {activeTab === "profile" && renderProfileSection()}
-        {activeTab === "projects" && (
-          <OtherProjectsScreen navigation={navigation} />
-        )}
-        {activeTab === "companies" && (
-          <CompaniesScreen navigation={navigation} />
-        )}
-        {activeTab === "map" && (
-          <MapScreen
-            studentProject={companyData.company_name || "No Company Name"}
-          />
-        )}
+        {/* Modern Sidebar */}
+        <ModernSidebar
+          visible={showSidebar}
+          onClose={() => setShowSidebar(false)}
+          userData={companyData}
+          chatUnreadCount={chatUnreadCount}
+          onNavigate={handleNavigateFromSidebar}
+        />
 
         {/* Notifications Modal */}
         <Modal
@@ -689,23 +615,20 @@ const Company = ({ navigation }) => {
                       <View
                         style={[
                           styles.notificationIconContainer,
-                          {
-                            backgroundColor:
-                              getIconColorForType(notification.type) + "20",
-                          },
+                          { backgroundColor: notification.iconColor + "20" },
                         ]}
                       >
                         <Ionicons
                           name={notification.icon}
                           size={24}
-                          color={getIconColorForType(notification.type)}
+                          color={notification.iconColor}
                         />
                       </View>
                       <View style={styles.notificationContent}>
                         <Text style={styles.notificationTitle}>
                           {notification.title}
                         </Text>
-                        <Text style={styles.notificationMessage}>
+                        <Text style={styles.notificationMessage} numberOfLines={2}>
                           {notification.message}
                         </Text>
                         <Text style={styles.notificationTime}>
@@ -724,6 +647,56 @@ const Company = ({ navigation }) => {
                       {!notification.read && <View style={styles.unreadDot} />}
                     </TouchableOpacity>
                   ))
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Notification Details Modal */}
+        <Modal
+          visible={showNotificationDetails}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowNotificationDetails(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { maxHeight: "70%" }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Notification Details</Text>
+                <TouchableOpacity onPress={() => setShowNotificationDetails(false)}>
+                  <Ionicons name="close" size={28} color="#333" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.notificationDetailsContent} showsVerticalScrollIndicator={false}>
+                {selectedNotification && (
+                  <>
+                    <View style={styles.notificationDetailsHeader}>
+                      <View
+                        style={[
+                          styles.notificationDetailsIcon,
+                          { backgroundColor: selectedNotification.iconColor || "#74B9FF" }
+                        ]}
+                      >
+                        <Ionicons
+                          name={selectedNotification.icon}
+                          size={32}
+                          color="#fff"
+                        />
+                      </View>
+                      <Text style={styles.notificationDetailsTitle}>
+                        {selectedNotification.title}
+                      </Text>
+                    </View>
+                    <View style={styles.notificationDetailsBody}>
+                      <Text style={styles.notificationDetailsMessage}>
+                        {selectedNotification.message}
+                      </Text>
+                      <Text style={styles.notificationDetailsTime}>
+                        {selectedNotification.time}
+                      </Text>
+                    </View>
+                  </>
                 )}
               </ScrollView>
             </View>
@@ -809,16 +782,6 @@ const Company = ({ navigation }) => {
                   placeholder="Enter company description"
                 />
 
-                <Text style={styles.inputLabel}>Category</Text>
-                <TextInput
-                  style={styles.input}
-                  value={companyData.category}
-                  onChangeText={(text) =>
-                    setCompanyData((prev) => ({ ...prev, category: text }))
-                  }
-                  placeholder="Enter company category"
-                />
-
                 <Text style={styles.inputLabel}>Website URL</Text>
                 <TextInput
                   style={styles.input}
@@ -860,13 +823,22 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#f5f7fa",
   },
   header: {
-    backgroundColor: Colors.mainColor,
     paddingTop: Platform.OS === "ios" ? 10 : 50,
-    paddingBottom: 20,
+    paddingBottom: 25,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headerTop: {
     flexDirection: "row",
@@ -877,204 +849,230 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  avatarWrapper: {
+    position: "relative",
+    marginRight: 14,
+  },
   headerPhoto: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 3,
-    borderColor: "#fff",
-    marginRight: 12,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  onlineStatusDot: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#10b981",
+    borderWidth: 2,
+    borderColor: Colors.mainColor,
   },
   headerGreeting: {
-    color: "#fff",
-    fontSize: 14,
-    opacity: 0.9,
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 2,
   },
   headerName: {
     color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   headerActions: {
     flexDirection: "row",
+    gap: 8,
   },
   iconButton: {
-    position: "relative",
-    padding: 5,
+    padding: 4,
   },
-  notificationButton: {
+  iconButtonInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
     position: "relative",
-    padding: 5,
   },
   notificationBadge: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#FF5252",
+    top: -2,
+    right: -2,
+    backgroundColor: "#ef4444",
     borderRadius: 10,
-    width: 20,
+    minWidth: 20,
     height: 20,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
     borderColor: Colors.mainColor,
+    paddingHorizontal: 4,
   },
   badgeText: {
     color: "#fff",
-    fontSize: 11,
-    fontWeight: "bold",
+    fontSize: 10,
+    fontWeight: "700",
   },
-  tabContainer: {
-    backgroundColor: "#fff",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  tabScroll: {
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-  },
-  tab: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    backgroundColor: "#F0F4FF",
-  },
-  activeTab: {
-    backgroundColor: Colors.mainColor,
-  },
-  tabText: {
-    fontSize: 14,
-    color: Colors.mainColor,
-    fontWeight: "600",
-  },
-  activeTabText: {
-    color: "#fff",
+  contentContainer: {
+    flex: 1,
+    paddingBottom: Platform.OS === "ios" ? 95 : 85,
   },
   tabContent: {
     flex: 1,
-    padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
-  profileHeader: {
+  // Single Profile Card Styles
+  singleProfileCard: {
     backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 28,
+    margin: 20,
+    marginBottom: 40,
+    shadowColor: "#1b2e4f",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    position: "relative",
+  },
+  profileEditButton: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 30,
+    backgroundColor: "#f0f4ff",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    zIndex: 10,
+  },
+  profileHeaderSection: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   profileImageContainer: {
     position: "relative",
-    marginBottom: 15,
+    marginBottom: 18,
   },
   profileImageLarge: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    borderWidth: 5,
     borderColor: Colors.mainColor,
   },
   statusIndicator: {
     position: "absolute",
-    bottom: 5,
-    right: 5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#4CAF50",
-    borderWidth: 3,
+    bottom: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#10b981",
+    borderWidth: 4,
     borderColor: "#fff",
   },
   profileNameLarge: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 10,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#1e293b",
+    marginTop: 8,
+    letterSpacing: 0.3,
+    textAlign: "center",
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    marginVertical: 24,
   },
-  cardHeader: {
+  infoSection: {
+    marginBottom: 4,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  cardTitle: {
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "700",
+    color: "#1e293b",
+    marginLeft: 10,
+    letterSpacing: 0.2,
   },
-  contactRow: {
+  infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 14,
+    paddingLeft: 8,
   },
-  contactText: {
-    fontSize: 15,
-    color: "#666",
+  infoTextContainer: {
     flex: 1,
+    marginLeft: 12,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: "#94a3b8",
+    fontWeight: "600",
+    marginBottom: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 15,
+    color: "#475569",
+    fontWeight: "500",
   },
   addressText: {
     fontSize: 15,
-    color: "#666",
-    lineHeight: 22,
+    color: "#475569",
+    lineHeight: 24,
+    fontWeight: "500",
+    paddingLeft: 8,
   },
   bioText: {
     fontSize: 15,
-    color: "#555",
-    lineHeight: 24,
+    color: "#475569",
+    lineHeight: 26,
+    paddingLeft: 8,
   },
   linkText: {
     color: Colors.mainColor,
     textDecorationLine: "underline",
+    fontWeight: "600",
   },
-  editButton: {
-    backgroundColor: Colors.mainColor,
-    flexDirection: "row",
+  comingSoonContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 15,
-    borderRadius: 25,
-    marginTop: 10,
-    marginBottom: Platform.OS === "ios" ? 40 : 20,
-    elevation: 3,
-    shadowColor: Colors.mainColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    paddingVertical: 80,
   },
-  editButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+  comingSoonTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  comingSoonText: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     maxHeight: "85%",
     paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
@@ -1082,24 +1080,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: "#f1f5f9",
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#1e293b",
+    letterSpacing: 0.3,
   },
   notificationItem: {
     flexDirection: "row",
-    padding: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
+    borderBottomColor: "#f8fafc",
     alignItems: "flex-start",
   },
   unreadNotification: {
-    backgroundColor: "#F0F8FF",
+    backgroundColor: "#f0f9ff",
   },
   notificationIconContainer: {
     width: 48,
@@ -1107,47 +1106,49 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 14,
   },
   notificationContent: {
     flex: 1,
   },
   notificationTitle: {
     fontSize: 15,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 5,
   },
   notificationMessage: {
     fontSize: 13,
-    color: "#666",
-    lineHeight: 18,
-    marginBottom: 4,
+    color: "#64748b",
+    lineHeight: 19,
+    marginBottom: 5,
   },
   notificationTime: {
     fontSize: 12,
-    color: "#999",
+    color: "#94a3b8",
+    fontWeight: "500",
   },
   unreadDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.mainColor,
-    marginTop: 5,
+    backgroundColor: "#3b82f6",
+    marginTop: 6,
   },
   deleteNotificationButton: {
-    padding: 5,
-    marginLeft: 8,
+    padding: 6,
+    marginLeft: 10,
   },
   editPhotoContainer: {
     alignSelf: "center",
-    marginVertical: 20,
+    marginVertical: 24,
     position: "relative",
   },
   editPhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 4,
     borderColor: Colors.mainColor,
   },
   editPhotoButton: {
@@ -1155,63 +1156,111 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: Colors.mainColor,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
     borderColor: "#fff",
+    shadowColor: Colors.mainColor,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 15,
-    marginBottom: 8,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginTop: 16,
+    marginBottom: 10,
     paddingHorizontal: 20,
+    letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 10,
-    padding: 15,
-    fontSize: 14,
-    color: "#333",
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    padding: 16,
+    fontSize: 15,
+    color: "#1e293b",
     marginHorizontal: 20,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    fontWeight: "500",
   },
   textArea: {
-    height: 100,
+    height: 110,
     textAlignVertical: "top",
   },
   saveButton: {
     backgroundColor: Colors.mainColor,
-    borderRadius: 25,
-    padding: 16,
+    borderRadius: 16,
+    padding: 18,
     marginHorizontal: 20,
-    marginTop: 25,
+    marginTop: 28,
     alignItems: "center",
-    elevation: 3,
     shadowColor: Colors.mainColor,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 12,
+    elevation: 6,
   },
   saveButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   emptyNotifications: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 60,
+    paddingVertical: 70,
   },
   emptyNotificationsText: {
     fontSize: 16,
-    color: "#999",
-    marginTop: 16,
+    color: "#94a3b8",
+    marginTop: 18,
+    fontWeight: "500",
+  },
+  notificationDetailsContent: {
+    padding: 24,
+  },
+  notificationDetailsHeader: {
+    alignItems: "center",
+    marginBottom: 28,
+  },
+  notificationDetailsIcon: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  notificationDetailsTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#1e293b",
+    textAlign: "center",
+    letterSpacing: 0.3,
+  },
+  notificationDetailsBody: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 16,
+    padding: 20,
+  },
+  notificationDetailsMessage: {
+    fontSize: 16,
+    color: "#475569",
+    lineHeight: 26,
+    marginBottom: 18,
+  },
+  notificationDetailsTime: {
+    fontSize: 13,
+    color: "#94a3b8",
+    textAlign: "right",
+    fontWeight: "600",
   },
 });
 

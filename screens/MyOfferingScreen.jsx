@@ -47,6 +47,19 @@ const MyOfferingScreen = ({ navigation }) => {
     type: "",
   });
 
+  // Helper function to get status color and text
+  const getStatusInfo = (status) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return { color: "#4CAF50", text: "Approved", icon: "checkmark-circle" };
+      case "rejected":
+        return { color: "#FF5252", text: "Rejected", icon: "close-circle" };
+      case "pending":
+      default:
+        return { color: "#FF9800", text: "Pending", icon: "time" };
+    }
+  };
+
   const fetchMyOffering = async () => {
     try {
       setError(null);
@@ -77,6 +90,7 @@ const MyOfferingScreen = ({ navigation }) => {
           offering_photos: photos,
           offering_id: result.data.offering_id || null,
           company_id: result.data.company_id || null,
+          status: result.data.status || "pending",
         };
 
         setMyOffering(offeringData);
@@ -245,12 +259,22 @@ const MyOfferingScreen = ({ navigation }) => {
       console.log("Offering feedback response:", feedbackResponse);
 
       if (feedbackResponse.success) {
-        const feedback = feedbackResponse.data.feedback || [];
+        const allFeedbackData = feedbackResponse.data.feedback || [];
         const average = feedbackResponse.data.average_rating || 0;
         const count = feedbackResponse.data.total_ratings || 0;
 
-        console.log("Setting offering feedback:", { feedback, average, count });
-        setAllFeedback(feedback);
+        // Filter to only show feedback with comments (non-empty)
+        const feedbackWithComments = allFeedbackData.filter(
+          (item) => item.comment && item.comment.trim().length > 0
+        );
+
+        console.log("Setting offering feedback:", { 
+          total: allFeedbackData.length,
+          withComments: feedbackWithComments.length, 
+          average, 
+          count 
+        });
+        setAllFeedback(feedbackWithComments);
         setFeedbackStats({
           average: average,
           count: count,
@@ -389,7 +413,7 @@ const MyOfferingScreen = ({ navigation }) => {
             renderErrorState()
           ) : myOffering ? (
             <View style={styles.modernOfferingContainer}>
-              {/* Header Section with Name */}
+              {/* Header Section with Name and Status */}
               <View style={styles.modernOfferingHeader}>
                 <View style={styles.modernOfferingTitleContainer}>
                   <Ionicons
@@ -401,15 +425,41 @@ const MyOfferingScreen = ({ navigation }) => {
                     {myOffering.name}
                   </Text>
                 </View>
-                {myOffering.price && (
-                  <View style={styles.priceBadge}>
-                    <Ionicons name="cash" size={20} color={Colors.mainColor} />
-                    <Text style={[styles.priceText, { marginLeft: 8 }]}>
-                      {myOffering.price}
-                    </Text>
-                  </View>
-                )}
+                <View
+                  style={[
+                    styles.modernStatusBadge,
+                    {
+                      backgroundColor:
+                        getStatusInfo(myOffering.status).color + "20",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={getStatusInfo(myOffering.status).icon}
+                    size={16}
+                    color={getStatusInfo(myOffering.status).color}
+                  />
+                  <Text
+                    style={[
+                      styles.modernStatusText,
+                      { color: getStatusInfo(myOffering.status).color },
+                      { marginLeft: 8 },
+                    ]}
+                  >
+                    {getStatusInfo(myOffering.status).text}
+                  </Text>
+                </View>
               </View>
+
+              {/* Price Badge */}
+              {myOffering.price && (
+                <View style={styles.priceBadge}>
+                  <Ionicons name="cash" size={20} color={Colors.mainColor} />
+                  <Text style={[styles.priceText, { marginLeft: 8 }]}>
+                    {myOffering.price}
+                  </Text>
+                </View>
+              )}
 
               {/* Description Section */}
               {myOffering.description ? (
@@ -823,6 +873,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     flex: 1,
+  },
+  modernStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 12,
+  },
+  modernStatusText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   priceBadge: {
     flexDirection: "row",

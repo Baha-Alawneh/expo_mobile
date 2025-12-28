@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
+  Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -25,6 +27,9 @@ const PendingOfferings = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState(null);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [offeringToReject, setOfferingToReject] = useState(null);
 
   useEffect(() => {
     fetchOfferings();
@@ -61,23 +66,23 @@ const PendingOfferings = ({ navigation }) => {
   };
 
   const handleReject = (offering) => {
-    Alert.alert(
-      "Reject Offering",
-      `Are you sure you want to reject "${offering.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reject",
-          style: "destructive",
-          onPress: () => updateStatus(offering.offering_id, "rejected"),
-        },
-      ]
-    );
+    setOfferingToReject(offering);
+    setRejectionReason("");
+    setShowRejectionModal(true);
   };
 
-  const updateStatus = async (offeringId, status) => {
+  const confirmRejection = () => {
+    if (!rejectionReason.trim()) {
+      Alert.alert("Required", "Please provide a rejection reason");
+      return;
+    }
+    setShowRejectionModal(false);
+    updateStatus(offeringToReject.offering_id, "rejected", rejectionReason);
+  };
+
+  const updateStatus = async (offeringId, status, rejection_reason = null) => {
     setProcessingId(offeringId);
-    const response = await updateOfferingStatus(offeringId, status);
+    const response = await updateOfferingStatus(offeringId, status, rejection_reason);
 
     if (response.success) {
       Alert.alert("Success", response.message);
@@ -342,6 +347,52 @@ const PendingOfferings = ({ navigation }) => {
           </>
         )}
       </ScrollView>
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        visible={showRejectionModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowRejectionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Rejection Reason</Text>
+              <TouchableOpacity onPress={() => setShowRejectionModal(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              Please provide a reason for rejecting "{offeringToReject?.name}"
+            </Text>
+            <TextInput
+              style={styles.textArea}
+              multiline
+              numberOfLines={4}
+              placeholder="Enter rejection reason (required)"
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowRejectionModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, !rejectionReason.trim() && styles.disabledButton]}
+                onPress={confirmRejection}
+                disabled={!rejectionReason.trim()}
+              >
+                <Text style={styles.confirmButtonText}>Reject Offering</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -577,6 +628,78 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#636E72",
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 24,
+    width: "90%",
+    maxWidth: 500,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2D3436",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#636E72",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  textArea: {
+    backgroundColor: "#F8F9FA",
+    borderWidth: 1,
+    borderColor: "#DFE6E9",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: "#2D3436",
+    minHeight: 100,
+    textAlignVertical: "top",
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: "#F8F9FA",
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#636E72",
+  },
+  confirmButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: "#FF7675",
+  },
+  confirmButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 
