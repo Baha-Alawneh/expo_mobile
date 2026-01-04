@@ -201,15 +201,22 @@ const MyProjectScreen = ({ navigation }) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
+      allowsMultipleSelection: true,
       quality: 0.8,
     });
 
     if (!result.canceled && result.assets) {
-      const newPhotos = result.assets || [result];
-      setProjectData((prev) => ({
-        ...prev,
-        project_photos: [...(prev.project_photos || []), ...newPhotos],
-      }));
+      // Filter out any invalid images (must have uri)
+      const validPhotos = (result.assets || []).filter(
+        (photo) => photo && photo.uri && photo.uri.trim().length > 0
+      );
+      
+      if (validPhotos.length > 0) {
+        setProjectData((prev) => ({
+          ...prev,
+          project_photos: [...(prev.project_photos || []), ...validPhotos],
+        }));
+      }
     }
   };
 
@@ -228,13 +235,18 @@ const MyProjectScreen = ({ navigation }) => {
     try {
       const userId = await AsyncStorage.getItem("userId");
 
+      // Filter out only NEW images that need to be uploaded (not URLs)
+      const newImagesToUpload = (projectData.project_photos || []).filter(
+        (photo) => photo && photo.uri && !photo.uri.startsWith("http")
+      );
+
+      // Don't send image objects in the create/update payload
       const projectPayload = {
         title: projectData.title.trim(),
         description: projectData.description.trim(),
         video_url: projectData.video_url?.trim() || "",
         github_link: projectData.github_link?.trim() || "",
         partner_email: projectData.partner_email?.trim() || "",
-        project_photos: projectData.project_photos || [],
         type: projectData.type || studentType,
       };
 
@@ -246,16 +258,14 @@ const MyProjectScreen = ({ navigation }) => {
       }
 
       if (result.success) {
-        if (
-          projectData.project_photos &&
-          projectData.project_photos.length > 0
-        ) {
+        // Only upload new images if there are any
+        if (newImagesToUpload.length > 0) {
           try {
             Alert.alert("Uploading", "Uploading project images...");
 
             const uploadResult = await uploadProjectImages(
               userId,
-              projectData.project_photos
+              newImagesToUpload
             );
 
             if (uploadResult.success) {

@@ -12,24 +12,11 @@ import { Colors } from "../../constants/constants";
 
 const ModernBottomNav = ({ activeTab, onTabChange }) => {
   // Animation values for each tab
-  const profileAnim = useRef(new Animated.Value(activeTab === "profile" ? 1 : 0)).current;
-  const projectAnim = useRef(new Animated.Value(activeTab === "project" ? 1 : 0)).current;
   const projectsAnim = useRef(new Animated.Value(activeTab === "projects" ? 1 : 0)).current;
   const companiesAnim = useRef(new Animated.Value(activeTab === "companies" ? 1 : 0)).current;
+  const mapAnim = useRef(new Animated.Value(activeTab === "map" ? 1 : 0)).current;
 
   const tabs = [
-    {
-      key: "profile",
-      icon: "person",
-      label: "Profile",
-      anim: profileAnim,
-    },
-    {
-      key: "project",
-      icon: "folder",
-      label: "My Project",
-      anim: projectAnim,
-    },
     {
       key: "projects",
       icon: "briefcase",
@@ -41,6 +28,12 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
       icon: "business",
       label: "Companies",
       anim: companiesAnim,
+    },
+    {
+      key: "map",
+      icon: "map",
+      label: "Map",
+      anim: mapAnim,
     },
   ];
 

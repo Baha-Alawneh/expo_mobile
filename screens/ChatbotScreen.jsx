@@ -12,6 +12,7 @@ import {
   StatusBar,
   ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 import { sendMessageToChatbot } from "../utils/chatbotService";
@@ -151,7 +152,10 @@ const ChatbotScreen = ({ navigation }) => {
         />
 
         {/* Header */}
-        <View style={styles.header}>
+        <LinearGradient
+          colors={[Colors.mainColor, '#2d4a7c']}
+          style={styles.header}
+        >
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -170,7 +174,7 @@ const ChatbotScreen = ({ navigation }) => {
             </View>
           </View>
           <View style={styles.headerRight} />
-        </View>
+        </LinearGradient>
 
         {/* Messages List */}
         <FlatList
@@ -246,7 +250,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.mainColor,
     paddingHorizontal: 16,
     paddingVertical: 12,
     elevation: 4,

@@ -38,7 +38,9 @@ const ModernProjectContent = ({ navigation }) => {
   const [allFeedback, setAllFeedback] = useState([]);
   const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
   const [showTypeSelection, setShowTypeSelection] = useState(false);
+  const [showEngineeringSubType, setShowEngineeringSubType] = useState(false);
   const [studentType, setStudentType] = useState("");
+  const [engineeringSubType, setEngineeringSubType] = useState(""); // UI only: hardware/software
   const [projectData, setProjectData] = useState({
     title: "",
     description: "",
@@ -190,27 +192,50 @@ const ModernProjectContent = ({ navigation }) => {
       partner_email: "",
       type: "",
     });
+    // Show type selection modal first for new projects
     setShowTypeSelection(true);
   };
 
   const editProject = () => {
-    setEditingProject(true);
-    setProjectData({
-      title: myProject.title || "",
-      description: myProject.description || "",
-      video_url: myProject.video_url || "",
-      github_link: myProject.github_link || "",
-      project_photos: myProject.project_photos || [],
-      partner_email: "",
-      type: studentType,
-    });
-    setShowAddProject(true);
+    if (myProject) {
+      const preparedPhotos =
+        myProject.project_photos && Array.isArray(myProject.project_photos)
+          ? myProject.project_photos.map((photoUrl, index) => ({
+              uri: photoUrl,
+              fileName: photoUrl.split("/").pop() || `photo_${index}.jpg`,
+              type: "image/jpeg",
+            }))
+          : [];
+
+      setProjectData({
+        title: myProject.title || "",
+        description: myProject.description || "",
+        video_url: myProject.video_url || "",
+        project_photos: preparedPhotos,
+        github_link: myProject.github_link || "",
+        partner_email: "",
+      });
+      setEditingProject(true);
+      setShowAddProject(true);
+    }
   };
 
-  const handleSelectType = (type) => {
+  const handleTypeSelection = (type) => {
     setStudentType(type);
     setProjectData((prev) => ({ ...prev, type }));
     setShowTypeSelection(false);
+    
+    // If engineering is selected, show sub-type selection (UI only)
+    if (type === "engineering") {
+      setShowEngineeringSubType(true);
+    } else {
+      setShowAddProject(true);
+    }
+  };
+
+  const handleEngineeringSubTypeSelection = (subType) => {
+    setEngineeringSubType(subType); // Store for UI purposes only
+    setShowEngineeringSubType(false);
     setShowAddProject(true);
   };
 
@@ -233,10 +258,10 @@ const ModernProjectContent = ({ navigation }) => {
       });
 
       if (!result.canceled && result.assets) {
-        const newImages = result.assets.map((asset) => asset.uri);
+        const newPhotos = result.assets || [result];
         setProjectData((prev) => ({
           ...prev,
-          project_photos: [...(prev.project_photos || []), ...newImages],
+          project_photos: [...(prev.project_photos || []), ...newPhotos],
         }));
       }
     } catch (error) {
@@ -262,72 +287,88 @@ const ModernProjectContent = ({ navigation }) => {
       return;
     }
 
+    // Validate type only for new projects (not editing)
+    if (!editingProject && !projectData.type && !studentType) {
+      Alert.alert("Error", "Please select a student type");
+      return;
+    }
+
     try {
       const userId = await AsyncStorage.getItem("userId");
-      if (!userId) {
-        Alert.alert("Error", "Please login again");
-        return;
-      }
 
-      let imageUrls = [];
-      if (
-        projectData.project_photos &&
-        projectData.project_photos.length > 0
-      ) {
-        const newImages = projectData.project_photos.filter((img) =>
-          img.startsWith("file://")
-        );
-
-        if (newImages.length > 0) {
-          const uploadResult = await uploadProjectImages(newImages);
-          if (!uploadResult.success) {
-            throw new Error("Failed to upload images");
-          }
-          imageUrls = [
-            ...projectData.project_photos.filter(
-              (img) => !img.startsWith("file://")
-            ),
-            ...uploadResult.urls,
-          ];
-        } else {
-          imageUrls = projectData.project_photos;
-        }
-      }
+      // Extract only URIs for the payload (backend expects array of strings)
+      const photoUris = projectData.project_photos?.map((photo) => 
+        typeof photo === 'string' ? photo : photo.uri
+      ) || [];
 
       const projectPayload = {
-        title: projectData.title,
-        description: projectData.description,
-        video_url: projectData.video_url || "",
-        github_link: projectData.github_link || "",
-        project_photos: imageUrls,
-        student_id: userId,
-        partner_email: projectData.partner_email || "",
+        title: projectData.title.trim(),
+        description: projectData.description.trim(),
+        video_url: projectData.video_url?.trim() || "",
+        github_link: projectData.github_link?.trim() || "",
+        partner_email: projectData.partner_email?.trim() || "",
+        project_photos: photoUris,
         type: projectData.type || studentType,
       };
 
       let result;
-      if (editingProject && myProject?.project_id) {
-        result = await updateProject(myProject.project_id, projectPayload);
+      if (editingProject && myProject) {
+        result = await updateProject(userId, projectPayload);
       } else {
-        result = await createProject(projectPayload);
+        result = await createProject(userId, projectPayload);
       }
 
       if (result.success) {
-        Alert.alert(
-          "Success",
-          editingProject
-            ? "Project updated successfully"
-            : "Project created successfully"
+        // Only upload NEW images (not existing S3 URLs)
+        const newImages = projectData.project_photos.filter(
+          (photo) => photo.uri && !photo.uri.startsWith("http")
         );
+        
+        if (newImages.length > 0) {
+          try {
+            Alert.alert("Uploading", "Uploading project images...");
+
+            const uploadResult = await uploadProjectImages(
+              userId,
+              newImages
+            );
+
+            if (uploadResult.success) {
+              Alert.alert(
+                "Success",
+                editingProject
+                  ? "Project and images updated successfully!"
+                  : "Project and images added successfully!"
+              );
+            } else {
+              Alert.alert(
+                "Warning",
+                "Project saved but image upload failed: " + uploadResult.message
+              );
+            }
+          } catch (error) {
+            Alert.alert(
+              "Warning",
+              "Project saved but image upload failed: " + error.message
+            );
+          }
+        } else {
+          Alert.alert(
+            "Success",
+            editingProject
+              ? "Project updated successfully!"
+              : "Project added successfully!"
+          );
+        }
+
         setShowAddProject(false);
         setEditingProject(false);
-        fetchMyProject();
+        await fetchMyProject();
       } else {
-        throw new Error(result.message || "Failed to save project");
+        Alert.alert("Error", result.message || "Failed to save project");
       }
     } catch (error) {
-      console.error("Error saving project:", error);
-      Alert.alert("Error", error.message || "Failed to save project");
+      Alert.alert("Error", "Failed to save project");
     }
   };
 
@@ -698,11 +739,11 @@ const ModernProjectContent = ({ navigation }) => {
             <View style={styles.formGroup}>
               <Text style={styles.label}>Photos</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {projectData.project_photos
-                  .filter((photo) => photo && typeof photo === 'string')
-                  .map((photo, index) => (
+                {projectData.project_photos?.map((photo, index) => {
+                  const photoUri = typeof photo === 'string' ? photo : photo.uri;
+                  return (
                     <View key={index} style={styles.imagePreviewContainer}>
-                      <Image source={{ uri: photo }} style={styles.imagePreview} />
+                      <Image source={{ uri: photoUri }} style={styles.imagePreview} />
                       <TouchableOpacity
                         style={styles.removeImageButton}
                         onPress={() => removeImage(index)}
@@ -710,7 +751,8 @@ const ModernProjectContent = ({ navigation }) => {
                         <Ionicons name="close-circle" size={24} color="#FF5252" />
                       </TouchableOpacity>
                     </View>
-                  ))}
+                  );
+                })}
                 <TouchableOpacity
                   style={styles.addImageButton}
                   onPress={selectImages}
@@ -737,7 +779,7 @@ const ModernProjectContent = ({ navigation }) => {
         </View>
       </Modal>
 
-      {/* Type Selection Modal */}
+      {/* Student Type Selection Modal */}
       <Modal
         visible={showTypeSelection}
         animationType="fade"
@@ -746,26 +788,90 @@ const ModernProjectContent = ({ navigation }) => {
       >
         <View style={styles.typeModalOverlay}>
           <View style={styles.typeModalContainer}>
-            <Text style={styles.typeModalTitle}>Select Project Type</Text>
+            <Text style={styles.typeModalTitle}>What is your student type?</Text>
+            <Text style={styles.typeModalSubtitle}>
+              Select your project type to continue
+            </Text>
+            
             <TouchableOpacity
               style={styles.typeOption}
-              onPress={() => handleSelectType("solo")}
+              onPress={() => handleTypeSelection("science")}
             >
-              <Ionicons name="person" size={24} color="#1b2e4f" />
-              <Text style={styles.typeOptionText}>Solo Project</Text>
+              <Ionicons name="flask" size={32} color="#1b2e4f" />
+              <View style={styles.typeOptionContent}>
+                <Text style={styles.typeOptionText}>Science</Text>
+                <Text style={styles.typeOptionDescription}>
+                  For science-related projects
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.typeOption}
-              onPress={() => handleSelectType("team")}
+              onPress={() => handleTypeSelection("engineering")}
             >
-              <Ionicons name="people" size={24} color="#1b2e4f" />
-              <Text style={styles.typeOptionText}>Team Project</Text>
+              <Ionicons name="construct" size={32} color="#1b2e4f" />
+              <View style={styles.typeOptionContent}>
+                <Text style={styles.typeOptionText}>Engineering</Text>
+                <Text style={styles.typeOptionDescription}>
+                  For engineering-related projects
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.typeCancelButton}
               onPress={() => setShowTypeSelection(false)}
+            >
+              <Text style={styles.typeCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Engineering Sub-Type Selection Modal (UI Only) */}
+      <Modal
+        visible={showEngineeringSubType}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowEngineeringSubType(false)}
+      >
+        <View style={styles.typeModalOverlay}>
+          <View style={styles.typeModalContainer}>
+            <Text style={styles.typeModalTitle}>Engineering Type</Text>
+            <Text style={styles.typeModalSubtitle}>
+              What type of engineering project is this?
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.typeOption}
+              onPress={() => handleEngineeringSubTypeSelection("hardware")}
+            >
+              <Ionicons name="hardware-chip" size={32} color="#1b2e4f" />
+              <View style={styles.typeOptionContent}>
+                <Text style={styles.typeOptionText}>Hardware</Text>
+                <Text style={styles.typeOptionDescription}>
+                  Physical devices and circuits
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.typeOption}
+              onPress={() => handleEngineeringSubTypeSelection("software")}
+            >
+              <Ionicons name="code-slash" size={32} color="#1b2e4f" />
+              <View style={styles.typeOptionContent}>
+                <Text style={styles.typeOptionText}>Software</Text>
+                <Text style={styles.typeOptionDescription}>
+                  Applications and programs
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.typeCancelButton}
+              onPress={() => setShowEngineeringSubType(false)}
             >
               <Text style={styles.typeCancelText}>Cancel</Text>
             </TouchableOpacity>
@@ -1187,25 +1293,41 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   typeModalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#1b2e4f",
-    marginBottom: 20,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  typeModalSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 24,
     textAlign: "center",
   },
   typeOption: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    backgroundColor: "#f5f7fa",
+    padding: 18,
     borderRadius: 12,
-    backgroundColor: "#f0f4ff",
     marginBottom: 12,
-    gap: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  typeOptionContent: {
+    marginLeft: 16,
+    flex: 1,
   },
   typeOptionText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
     color: "#1b2e4f",
+    marginBottom: 2,
+  },
+  typeOptionDescription: {
+    fontSize: 13,
+    color: "#666",
   },
   typeCancelButton: {
     padding: 16,
