@@ -34,6 +34,11 @@ const Login = () => {
         result.message ||
         `Error code: ${result.status}`;
       Alert.alert("Login Failed", errorReason);
+    } else {
+      // Clear the input fields on successful login
+      setEmail("");
+      setPassword("");
+      setErrors({});
     }
   };
 

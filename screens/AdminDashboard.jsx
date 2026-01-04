@@ -48,14 +48,6 @@ const AdminDashboard = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerGreeting}>Admin Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Overview & Analytics</Text>
-        </View>
-      </View>
-
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}

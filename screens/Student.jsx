@@ -25,6 +25,7 @@ import ModernProjectContent from "../components/student/ModernProjectContent";
 import ModernBottomNav from "../components/student/ModernBottomNav";
 import ModernSidebar from "../components/student/ModernSidebar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAuthData } from "../utils/auth";
 import { getStudentData, postStudentData } from "../apis/student/Student";
 import { uploadStudentFiles } from "../apis/student/StudentFiles";
 import { BASE_URL } from "../constants/config";
@@ -613,6 +614,30 @@ const Student = ({ navigation }) => {
     }
   };
 
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await clearAuthData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          }
+        }
+      ]
+    );
+  };
+
   //useEffects
   useEffect(() => {
     handleFetchStudentData();
@@ -686,6 +711,15 @@ const Student = ({ navigation }) => {
                       </Text>
                     </View>
                   )}
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <View style={styles.iconButtonInner}>
+                  <Ionicons name="log-out-outline" size={24} color="#fff" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity

@@ -23,6 +23,7 @@ import CompaniesScreen from "./CompaniesScreen";
 import MapScreen from "./MapScreen";
 import ModernOfferingContent from "../components/company/ModernOfferingContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAuthData } from "../utils/auth";
 import { getCompanyData, postCompanyData } from "../apis/company/Company";
 import { uploadCompanyFile } from "../apis/company/CompanyFiles";
 import { BASE_URL } from "../constants/config";
@@ -472,6 +473,30 @@ const Company = ({ navigation }) => {
     }
   };
 
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await clearAuthData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          }
+        }
+      ]
+    );
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
@@ -529,6 +554,15 @@ const Company = ({ navigation }) => {
                       </Text>
                     </View>
                   )}
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <View style={styles.iconButtonInner}>
+                  <Ionicons name="log-out-outline" size={24} color="#fff" />
                 </View>
               </TouchableOpacity>
               <TouchableOpacity

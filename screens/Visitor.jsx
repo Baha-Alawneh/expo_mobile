@@ -7,10 +7,12 @@ import {
   SafeAreaView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "../constants/constants";
+import { clearAuthData } from "../utils/auth";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
 import MapScreen from "./MapScreen";
@@ -27,6 +29,30 @@ const Visitor = ({ navigation }) => {
     } else {
       navigation.navigate(route);
     }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await clearAuthData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -55,12 +81,20 @@ const Visitor = ({ navigation }) => {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.menuButton}
-              onPress={() => setShowSidebar(true)}
-            >
-              <Ionicons name="menu" size={28} color="#fff" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity
+                style={styles.menuButton}
+                onPress={handleLogout}
+              >
+                <Ionicons name="log-out-outline" size={28} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuButton}
+                onPress={() => setShowSidebar(true)}
+              >
+                <Ionicons name="menu" size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
         </LinearGradient>
 
