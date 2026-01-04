@@ -25,10 +25,13 @@ import {
   getOffering,
   createOffering,
   updateOffering,
+  uploadOfferingImages,
 } from "../apis/company/Offering";
 import { getOfferingFeedback } from "../apis/feedback/Feedback";
 
-const MyOfferingScreen = ({ navigation }) => {
+console.log("🟢 MyOfferingScreen.jsx LOADED");
+
+const MyOfferingScreenV2 = ({ navigation }) => {
   const [myOffering, setMyOffering] = useState(null);
   const [showAddOffering, setShowAddOffering] = useState(false);
   const [editingOffering, setEditingOffering] = useState(false);
@@ -149,57 +152,127 @@ const MyOfferingScreen = ({ navigation }) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
+      allowsMultipleSelection: true,
       quality: 0.8,
     });
 
     if (!result.canceled && result.assets) {
-      const newPhotos = result.assets || [result];
-      setOfferingData((prev) => ({
-        ...prev,
-        offering_photos: [...(prev.offering_photos || []), ...newPhotos],
-      }));
+      // Filter out any invalid images (must have uri)
+      const validPhotos = (result.assets || []).filter(
+        (photo) => photo && photo.uri && photo.uri.trim().length > 0
+      );
+      
+      if (validPhotos.length > 0) {
+        setOfferingData((prev) => ({
+          ...prev,
+          offering_photos: [...(prev.offering_photos || []), ...validPhotos],
+        }));
+      }
     }
   };
 
   const saveOffering = async () => {
-    if (!offeringData.name.trim()) {
-      Alert.alert("Error", "Please enter an offering name");
-      return;
-    }
-
-    // Validate type only for new offerings (not editing)
-    if (!editingOffering && !offeringData.type && !offeringType) {
-      Alert.alert("Error", "Please select an offering type");
-      return;
-    }
-
     try {
-      const userId = await AsyncStorage.getItem("userId");
+      console.log("=== saveOffering started ===");
+      console.log("offeringData:", offeringData);
+      
+      if (!offeringData?.name || !offeringData.name.trim()) {
+        Alert.alert("Error", "Please enter an offering name");
+        return;
+      }
 
+      // Validate type only for new offerings (not editing)
+      if (!editingOffering && !offeringData.type && !offeringType) {
+        Alert.alert("Error", "Please select an offering type");
+        return;
+      }
+
+      console.log("Validations passed");
+      console.log("editingOffering:", editingOffering);
+      
+      const userId = await AsyncStorage.getItem("userId");
+      console.log("userId:", userId);
+
+      // Filter out only NEW images that need to be uploaded (not URLs)
+      const newImagesToUpload = (offeringData.offering_photos || []).filter(
+        (photo) => photo && photo.uri && !photo.uri.startsWith("http")
+      );
+      console.log("newImagesToUpload count:", newImagesToUpload.length);
+
+      // Don't send image objects in the create/update payload
       const offeringPayload = {
         name: offeringData.name.trim(),
-        description: offeringData.description.trim(),
-        price: offeringData.price?.trim() || "",
-        offering_photos: offeringData.offering_photos || [],
-        type: offeringData.type || offeringType,
+        description: (offeringData.description || "").trim(),
+        price: (offeringData.price || "").toString().trim(),
       };
+
+      // Only add type for new offerings, not when editing
+      if (!editingOffering) {
+        offeringPayload.type = offeringData.type || offeringType;
+      }
+      
+      console.log("Payload prepared, calling API...");
 
       let result;
       if (editingOffering && myOffering) {
+        console.log("Calling updateOffering...");
         result = await updateOffering(userId, offeringPayload);
       } else {
+        console.log("Calling createOffering...");
         result = await createOffering(userId, offeringPayload);
       }
+      
+      console.log("API call completed, success:", result?.success);
 
-      if (result.success) {
-        Alert.alert(
-          "Success",
-          editingOffering
-            ? "Offering updated successfully!"
-            : "Offering added successfully!"
-        );
+      if (result && result.success) {
+        console.log("Success branch");
+        // Only upload new images if there are any
+        if (newImagesToUpload.length > 0) {
+          console.log("Uploading images...");
+          try {
+            Alert.alert("Uploading", "Uploading offering images...");
 
-        setMyOffering(result.data);
+            const uploadResult = await uploadOfferingImages(
+              userId,
+              newImagesToUpload
+            );
+
+            if (uploadResult.success) {
+              Alert.alert(
+                "Success",
+                editingOffering
+                  ? "Offering and images updated successfully!"
+                  : "Offering and images added successfully!"
+              );
+            } else {
+              Alert.alert(
+                "Warning",
+                "Offering saved but image upload failed: " + uploadResult.message
+              );
+            }
+          } catch (error) {
+            console.error("Image upload error:", error);
+            Alert.alert(
+              "Warning",
+              "Offering saved but image upload failed: " + error.message
+            );
+          }
+        } else {
+          console.log("No images to upload, showing success");
+          Alert.alert(
+            "Success",
+            editingOffering
+              ? "Offering updated successfully!"
+              : "Offering added successfully!"
+          );
+        }
+
+        console.log("Cleaning up state...");
+        // Safely set offering data
+        if (result.data) {
+          setMyOffering(result.data);
+        }
+        
         setOfferingData({
           name: "",
           description: "",
@@ -209,16 +282,23 @@ const MyOfferingScreen = ({ navigation }) => {
         setShowAddOffering(false);
         setEditingOffering(false);
 
+        console.log("Fetching offering...");
         await fetchMyOffering();
+        console.log("Done!");
       } else {
-        Alert.alert("Error", result.message || "Failed to save offering");
+        console.log("API returned error");
+        Alert.alert("Error", result?.message || "Failed to save offering");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to save offering");
+      console.error("=== CATCH BLOCK ===");
+      console.error("Error:", error);
+      console.error("Message:", error?.message);
+      Alert.alert("Error", error?.message || "An unexpected error occurred");
     }
   };
 
   const editOffering = () => {
+    console.log("🟡 editOffering called");
     if (myOffering) {
       const preparedPhotos =
         myOffering.offering_photos && Array.isArray(myOffering.offering_photos)
@@ -291,11 +371,14 @@ const MyOfferingScreen = ({ navigation }) => {
   };
 
   useEffect(() => {
+    console.log("🔵 MyOfferingScreen useEffect - component mounted");
+    Alert.alert("DEBUG", "Component mounted!");
     fetchMyOffering();
   }, []);
 
   useEffect(() => {
     if (myOffering?.offering_id) {
+      console.log("🔵 Loading feedback for offering:", myOffering.offering_id);
       loadFeedbackData();
     }
   }, [myOffering?.offering_id]);
@@ -670,7 +753,12 @@ const MyOfferingScreen = ({ navigation }) => {
 
                 <TouchableOpacity
                   style={styles.saveButton}
-                  onPress={saveOffering}
+                  onPress={() => {
+                    console.log("🔴 BUTTON PRESSED!");
+                    console.log("editingOffering:", editingOffering);
+                    console.log("offeringData:", offeringData);
+                    saveOffering();
+                  }}
                 >
                   <Text style={styles.saveButtonText}>
                     {editingOffering ? "Update Offering" : "Add Offering"}
@@ -1139,4 +1227,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MyOfferingScreen;
+export default MyOfferingScreenV2;
