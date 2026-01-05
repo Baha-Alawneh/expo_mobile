@@ -21,7 +21,7 @@ import {
 
 const { width } = Dimensions.get("window");
 
-const PendingProjects = ({ navigation }) => {
+const PendingProjects = ({ navigation, onBack }) => {
   const [activeTab, setActiveTab] = useState("pending");
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,7 @@ const PendingProjects = ({ navigation }) => {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [projectToReject, setProjectToReject] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProjects();
@@ -239,7 +240,7 @@ const PendingProjects = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={onBack || (() => navigation.goBack())}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#2D3436" />
@@ -278,6 +279,23 @@ const PendingProjects = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search projects by name..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -293,41 +311,55 @@ const PendingProjects = ({ navigation }) => {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6C5CE7" />
           </View>
-        ) : projects.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons 
-              name={
-                activeTab === "pending" ? "checkmark-done-circle" :
-                activeTab === "approved" ? "folder-open-outline" :
-                "close-circle-outline"
-              } 
-              size={80} 
-              color="#DFE6E9" 
-            />
-            <Text style={styles.emptyTitle}>
-              {activeTab === "pending" ? "All Clear!" :
-               activeTab === "approved" ? "No Approved Projects" :
-               "No Rejected Projects"}
-            </Text>
-            <Text style={styles.emptyText}>
-              {activeTab === "pending" 
-                ? "No pending projects to review at the moment"
-                : `No ${activeTab} projects found`}
-            </Text>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.sectionTitle}>
-              {activeTab === "pending" && "Review and approve student projects"}
-              {activeTab === "approved" && "Successfully approved projects"}
-              {activeTab === "rejected" && "Rejected projects"}
-            </Text>
-            {projects.map((project, index) => (
-              <ProjectCard key={`${project.project_id}-${index}`} project={project} />
-            ))}
-            <View style={{ height: 30 }} />
-          </>
-        )}
+        ) : (() => {
+          // Filter projects based on search query
+          const filteredProjects = projects.filter((project) => {
+            if (!searchQuery.trim()) return true;
+            const searchLower = searchQuery.toLowerCase();
+            const title = (project.title || project.project_title || "").toLowerCase();
+            return title.includes(searchLower);
+          });
+
+          return filteredProjects.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons 
+                name={searchQuery ? "search-outline" : (
+                  activeTab === "pending" ? "checkmark-done-circle" :
+                  activeTab === "approved" ? "folder-open-outline" :
+                  "close-circle-outline"
+                )} 
+                size={80} 
+                color="#DFE6E9" 
+              />
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? "No Results Found" : (
+                  activeTab === "pending" ? "All Clear!" :
+                  activeTab === "approved" ? "No Approved Projects" :
+                  "No Rejected Projects"
+                )}
+              </Text>
+              <Text style={styles.emptyText}>
+                {searchQuery 
+                  ? "Try a different search term"
+                  : activeTab === "pending" 
+                    ? "No pending projects to review at the moment"
+                    : `No ${activeTab} projects found`}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.sectionTitle}>
+                {activeTab === "pending" && "Review and approve student projects"}
+                {activeTab === "approved" && "Successfully approved projects"}
+                {activeTab === "rejected" && "Rejected projects"}
+              </Text>
+              {filteredProjects.map((project, index) => (
+                <ProjectCard key={`${project.project_id}-${index}`} project={project} />
+              ))}
+              <View style={{ height: 100 }} />
+            </>
+          );
+        })()}
       </ScrollView>
 
       {/* Rejection Reason Modal */}
@@ -392,8 +424,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#FFF",
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 30,
+    paddingBottom: 10,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -407,9 +439,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   backButton: {
-    width: 40,
+     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F5F5F5",
     justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 20,
@@ -458,9 +493,39 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#6C5CE7",
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    padding: 0,
+  },
+  clearButton: {
+    padding: 5,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 80,
   },
   sectionTitle: {
     fontSize: 14,

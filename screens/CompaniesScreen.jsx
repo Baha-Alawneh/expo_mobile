@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -23,6 +24,7 @@ const CompaniesScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState(null); // null, 'name', 'rating'
   const [sortOrder, setSortOrder] = useState("DESC"); // 'ASC' or 'DESC'
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCompanies = async () => {
     try {
@@ -149,15 +151,41 @@ const CompaniesScreen = ({ navigation }) => {
     return <View style={styles.container}>{renderErrorState()}</View>;
   }
 
+  // Filter companies based on search query
+  const filteredCompanies = companies.filter((company) => {
+    if (!searchQuery.trim()) return true;
+    const searchLower = searchQuery.toLowerCase();
+    const companyName = (company.company_name || "").toLowerCase();
+    const offeringName = (company.offering_name || "").toLowerCase();
+    return companyName.includes(searchLower) || offeringName.includes(searchLower);
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <View>
           <Text style={styles.sectionTitle}>Company Offerings</Text>
           <Text style={styles.sectionSubtitle}>
-            {companies.length} offerings
+            {filteredCompanies.length} offerings
           </Text>
         </View>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search companies by name..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Sorting Options */}
@@ -217,7 +245,7 @@ const CompaniesScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-        data={companies}
+        data={filteredCompanies}
         keyExtractor={(item) =>
           item.company_id?.toString() || item.id?.toString()
         }
@@ -375,6 +403,34 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     color: "#666",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    padding: 0,
+  },
+  clearButton: {
+    padding: 5,
   },
   sortingContainer: {
     flexDirection: "row",

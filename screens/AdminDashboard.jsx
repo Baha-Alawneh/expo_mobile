@@ -14,7 +14,7 @@ import { getDashboardStats } from "../apis/admin/Admin";
 
 const { width } = Dimensions.get("window");
 
-const AdminDashboard = ({ navigation }) => {
+const AdminDashboard = ({ navigation, onNavigateToAnalytics }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,7 +105,7 @@ const AdminDashboard = ({ navigation }) => {
 
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#FDCB6E" }]}
-              onPress={() => navigation.navigate("Analytics")}
+              onPress={onNavigateToAnalytics}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="analytics" size={24} color="#FFF" />
@@ -235,7 +235,7 @@ const AdminDashboard = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -288,6 +288,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 80,
   },
   section: {
     marginTop: 20,
