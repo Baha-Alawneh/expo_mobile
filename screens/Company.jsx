@@ -20,7 +20,7 @@ import { Colors } from "../constants/constants";
 import * as ImagePicker from "expo-image-picker";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
-import MapScreen from "./MapScreen";
+import MapScreenNew from "./MapScreenNew";
 import ModernOfferingContent from "../components/company/ModernOfferingContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCompanyData, postCompanyData } from "../apis/company/Company";
@@ -557,8 +557,10 @@ const Company = ({ navigation }) => {
             <CompaniesScreen navigation={navigation} />
           )}
           {activeTab === "map" && (
-            <MapScreen
-              studentProject={companyData.company_name || "No Company Name"}
+            <MapScreenNew
+              navigation={navigation}
+              userRole="company"
+              userId={companyData.id || companyData.company_id}
             />
           )}
         </View>

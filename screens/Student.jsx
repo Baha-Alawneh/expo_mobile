@@ -20,7 +20,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
-import MapScreen from "./MapScreen";
+import MapScreenNew from "./MapScreenNew";
 import ModernProjectContent from "../components/student/ModernProjectContent";
 import ModernBottomNav from "../components/student/ModernBottomNav";
 import ModernSidebar from "../components/student/ModernSidebar";
@@ -714,8 +714,10 @@ const Student = ({ navigation }) => {
             <CompaniesScreen navigation={navigation} />
           )}
           {activeTab === "map" && (
-            <MapScreen
-              studentProject={studentData.project?.title || "No Project"}
+            <MapScreenNew
+              navigation={navigation}
+              userRole="student"
+              userId={studentData.id || studentData.student_id}
             />
           )}
         </View>

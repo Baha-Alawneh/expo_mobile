@@ -8,6 +8,7 @@ import SendNotification from "./SendNotification";
 import PendingProjects from "./PendingProjects";
 import PendingOfferings from "./PendingOfferings";
 import AnalyticsScreen from "./AnalyticsScreen";
+import MapScreenNew from "./MapScreenNew";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -50,6 +51,8 @@ const Admin = () => {
             iconName = focused ? "folder" : "folder-outline";
           } else if (route.name === "Offers") {
             iconName = focused ? "briefcase" : "briefcase-outline";
+          } else if (route.name === "Map") {
+            iconName = focused ? "map" : "map-outline";
           } else if (route.name === "Notify") {
             iconName = focused ? "send" : "send-outline";
           }
@@ -96,6 +99,17 @@ const Admin = () => {
         component={PendingOfferings}
         options={{
           tabBarLabel: "Offers",
+        }}
+      />
+      <Tab.Screen
+        name="Map"
+        component={MapScreenNew}
+        options={{
+          tabBarLabel: "Map",
+        }}
+        initialParams={{
+          userRole: "admin",
+          userId: null
         }}
       />
       <Tab.Screen
