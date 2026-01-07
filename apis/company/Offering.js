@@ -1,6 +1,6 @@
 import axios from "axios";
 import { BASE_URL } from "../../constants/config";
-import { getAuthHeaders } from "../../utils/auth";
+import { getAuthHeaders, getAuthToken } from "../../utils/auth";
 
 // Get all offerings with optional sorting
 // Note: Backend automatically excludes the authenticated company's own offerings
@@ -245,54 +245,107 @@ export const updateOffering = async (userId, offeringData) => {
   }
 };
 
-export const uploadOfferingImages = async (userId, images) => {
+export const uploadOfferingImages = async (userId, images, keepImageKeys = []) => {
   try {
-    const headers = await getAuthHeaders();
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error("No authentication token found. Please login again.");
+    }
+
     const formData = new FormData();
 
-    // Add offering images
+    // Add list of old image keys to keep
+    if (keepImageKeys.length > 0) {
+      formData.append("keepImages", JSON.stringify(keepImageKeys));
+      console.log("Old images to keep:", keepImageKeys);
+    }
+
+    // Append multiple images to formData
     images.forEach((image, index) => {
-      formData.append("offering_images", {
-        uri: image.uri,
-        type: image.mimeType || "image/jpeg",
-        name: image.fileName || `offering_${Date.now()}_${index}.jpg`,
+      const imageUri = image.uri;
+      const uriParts = imageUri.split("/");
+      const fileName = uriParts[uriParts.length - 1];
+      const imageName =
+        image.fileName || fileName || `image_${Date.now()}_${index}.jpg`;
+
+      // Determine the correct file type
+      let imageType = image.type || image.mimeType || "image/jpeg";
+      if (!imageType.startsWith("image/")) {
+        if (imageName.toLowerCase().endsWith(".png")) {
+          imageType = "image/png";
+        } else if (
+          imageName.toLowerCase().endsWith(".jpg") ||
+          imageName.toLowerCase().endsWith(".jpeg")
+        ) {
+          imageType = "image/jpeg";
+        } else {
+          imageType = "image/jpeg"; // default
+        }
+      }
+
+      console.log(`Preparing image ${index} for upload:`);
+      console.log("  URI:", imageUri);
+      console.log("  Name:", imageName);
+      console.log("  Type:", imageType);
+
+      formData.append("images", {
+        uri: imageUri,
+        name: imageName,
+        type: imageType,
       });
     });
 
-    const response = await axios.post(
-      `${BASE_URL}/companies/offering/${userId}/upload-images`,
-      formData,
-      {
-        headers: {
-          ...headers,
-          "Content-Type": "multipart/form-data",
-        },
-        timeout: 60000,
-      }
-    );
+    const uploadUrl = `${BASE_URL}/companies/offering/${userId}/upload`;
+    console.log("Uploading to:", uploadUrl);
 
-    if (response.data.success) {
-      return {
-        success: true,
-        data: response.data.data,
-        message: response.data.message || "Images uploaded successfully",
-      };
-    } else {
-      return {
-        success: false,
-        message: response.data.message || "Upload failed",
-      };
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+
+    console.log("Response status:", response.status);
+
+    const responseText = await response.text();
+    console.log("Response text:", responseText);
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse response:", responseText);
+      throw new Error(
+        "Invalid server response: " + responseText.substring(0, 100)
+      );
     }
+
+    console.log("Response data:", result);
+
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+
+    // Handle 429 Rate Limit
+    if (response.status === 429) {
+      throw new Error("Too many upload requests. Please try again later.");
+    }
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Upload failed");
+    }
+
+    return result;
   } catch (error) {
-    if (error.response) {
-      return {
-        success: false,
-        message: error.response.data.message || error.response.data,
-      };
-    } else if (error.request) {
-      return { success: false, message: "No response from server" };
-    } else {
-      return { success: false, message: error.message };
-    }
+    console.error("Error uploading offering images:", error);
+    console.error("Error details:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+    });
+    throw error;
   }
 };

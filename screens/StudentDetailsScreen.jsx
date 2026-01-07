@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 import { getStudentDataByEmail } from "../apis/student/Student";
@@ -155,7 +156,10 @@ const StudentDetailsScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           {/* Header */}
-          <View style={styles.header}>
+          <LinearGradient
+            colors={[Colors.mainColor, '#2d4a7c']}
+            style={styles.header}
+          >
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
@@ -164,7 +168,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Student Profile</Text>
             <View style={{ width: 24 }} />
-          </View>
+          </LinearGradient>
 
           {/* Loading State */}
           <View style={styles.centerContainer}>
@@ -181,7 +185,10 @@ const StudentDetailsScreen = ({ navigation, route }) => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           {/* Header */}
-          <View style={styles.header}>
+          <LinearGradient
+            colors={[Colors.mainColor, '#2d4a7c']}
+            style={styles.header}
+          >
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
@@ -190,7 +197,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Student Profile</Text>
             <View style={{ width: 24 }} />
-          </View>
+          </LinearGradient>
 
           {/* Error State */}
           <View style={styles.centerContainer}>
@@ -218,7 +225,10 @@ const StudentDetailsScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <LinearGradient
+          colors={[Colors.mainColor, '#2d4a7c']}
+          style={styles.header}
+        >
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -227,7 +237,7 @@ const StudentDetailsScreen = ({ navigation, route }) => {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Student Profile</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </LinearGradient>
 
         {/* Content */}
         <ScrollView
@@ -235,127 +245,149 @@ const StudentDetailsScreen = ({ navigation, route }) => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
         >
-          {/* Profile Header */}
-          <View style={styles.profileHeader}>
-            <View style={styles.profileImageContainer}>
-              <Image
-                source={{ uri: studentData.photo }}
-                style={styles.profileImageLarge}
-              />
-              <View style={styles.statusIndicator} />
-            </View>
-            <Text style={styles.profileNameLarge}>{studentData.name}</Text>
-            <Text style={styles.profileMajor}>
-              {studentData.major}
-              {studentData.year ? ` • ${studentData.year}` : ""}
-            </Text>
-            <Text style={styles.profileEmail}>{studentData.email}</Text>
-          </View>
-
-          {/* Project Card */}
-          {studentData.project?.title && (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons
-                  name="cube-outline"
-                  size={24}
-                  color={Colors.mainColor}
+          {/* Single Profile Card */}
+          <View style={styles.profileCard}>
+            {/* Profile Header Section */}
+            <View style={styles.profileHeaderSection}>
+              <View style={styles.profileImageContainer}>
+                <Image
+                  source={{ uri: studentData.photo }}
+                  style={styles.profileImageLarge}
                 />
-                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
-                  Project
-                </Text>
+                <View style={styles.statusIndicator} />
               </View>
-              <Text style={styles.projectTitle}>
-                {studentData.project.title}
+              <Text style={styles.profileNameLarge}>{studentData.name}</Text>
+              <Text style={styles.profileMajor}>
+                {studentData.major}
+                {studentData.year ? ` • ${studentData.year}` : ""}
               </Text>
-              {studentData.project.booth && (
-                <View style={styles.boothTag}>
-                  <Ionicons
-                    name="location"
-                    size={16}
-                    color={Colors.mainColor}
-                  />
-                  <Text style={[styles.boothText, { marginLeft: 8 }]}>
-                    {studentData.project.booth}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Skills Card */}
-          {studentData.skills && studentData.skills.length > 0 && (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons
-                  name="code-slash-outline"
-                  size={24}
-                  color={Colors.mainColor}
-                />
-                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
-                  Skills
+              <View style={styles.emailRow}>
+                <Ionicons name="mail" size={16} color="#666" />
+                <Text style={[styles.profileEmail, { marginLeft: 6 }]}>
+                  {studentData.email}
                 </Text>
               </View>
-              <View style={styles.skillsContainer}>
-                {studentData.skills.map((skill, index) => (
-                  <View key={index} style={styles.skillChip}>
-                    <Text style={styles.skillText}>{skill}</Text>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.divider} />
+
+            {/* Project Section */}
+            {studentData.project?.title && (
+              <>
+                <View style={styles.infoSection}>
+                  <View style={styles.sectionHeader}>
+                    <Ionicons
+                      name="cube-outline"
+                      size={20}
+                      color={Colors.mainColor}
+                    />
+                    <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>
+                      Project
+                    </Text>
                   </View>
-                ))}
-              </View>
-            </View>
-          )}
+                  <Text style={styles.projectTitle}>
+                    {studentData.project.title}
+                  </Text>
+                  {studentData.project.booth && (
+                    <View style={styles.boothTag}>
+                      <Ionicons
+                        name="location"
+                        size={16}
+                        color={Colors.mainColor}
+                      />
+                      <Text style={[styles.boothText, { marginLeft: 6 }]}>
+                        {studentData.project.booth}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
 
-          {/* About Me Card */}
-          {studentData.bio && (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
+            {/* Skills Section */}
+            {studentData.skills && studentData.skills.length > 0 && (
+              <>
+                <View style={styles.infoSection}>
+                  <View style={styles.sectionHeader}>
+                    <Ionicons
+                      name="code-slash-outline"
+                      size={20}
+                      color={Colors.mainColor}
+                    />
+                    <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>
+                      Skills
+                    </Text>
+                  </View>
+                  <View style={styles.skillsContainer}>
+                    {studentData.skills.map((skill, index) => (
+                      <View key={index} style={styles.skillChip}>
+                        <Text style={styles.skillText}>{skill}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
+
+            {/* About Me Section */}
+            {studentData.bio && (
+              <>
+                <View style={styles.infoSection}>
+                  <View style={styles.sectionHeader}>
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={Colors.mainColor}
+                    />
+                    <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>
+                      About Me
+                    </Text>
+                  </View>
+                  <Text style={styles.bioText}>{studentData.bio}</Text>
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
+
+            {/* Resume Section */}
+            <View style={styles.infoSection}>
+              <View style={styles.sectionHeader}>
                 <Ionicons
-                  name="person-outline"
-                  size={24}
+                  name="document-text-outline"
+                  size={20}
                   color={Colors.mainColor}
                 />
-                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
-                  About Me
+                <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>
+                  Resume
                 </Text>
               </View>
-              <Text style={styles.bioText}>{studentData.bio}</Text>
-            </View>
-          )}
-
-          {/* CV Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons
-                name="document-text-outline"
-                size={24}
-                color={Colors.mainColor}
-              />
-              <Text style={[styles.cardTitle, { marginLeft: 8 }]}>Resume</Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.cvButton,
-                !studentData.cv_url && styles.cvButtonDisabled,
-              ]}
-              onPress={downloadCV}
-              disabled={!studentData.cv_url}
-            >
-              <Ionicons
-                name="download-outline"
-                size={20}
-                color={studentData.cv_url ? Colors.mainColor : "#999"}
-              />
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.cvButtonText,
-                  !studentData.cv_url && styles.cvButtonTextDisabled,
-                  { marginLeft: 8 },
+                  styles.cvButton,
+                  !studentData.cv_url && styles.cvButtonDisabled,
                 ]}
+                onPress={downloadCV}
+                disabled={!studentData.cv_url}
               >
-                {studentData.cv_url ? `Download Resume` : "No resume uploaded"}
-              </Text>
-            </TouchableOpacity>
+                <Ionicons
+                  name="download-outline"
+                  size={20}
+                  color={studentData.cv_url ? Colors.mainColor : "#999"}
+                />
+                <Text
+                  style={[
+                    styles.cvButtonText,
+                    !studentData.cv_url && styles.cvButtonTextDisabled,
+                    { marginLeft: 8 },
+                  ]}
+                >
+                  {studentData.cv_url ? `Download Resume` : "No resume uploaded"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -373,7 +405,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
   },
   header: {
-    backgroundColor: Colors.mainColor,
     paddingTop: Platform.OS === "ios" ? 10 : 20,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -429,17 +460,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.mainColor,
   },
-  profileHeader: {
+  profileCard: {
     backgroundColor: "#fff",
     borderRadius: 20,
-    padding: 30,
-    alignItems: "center",
-    marginBottom: 20,
-    elevation: 2,
+    padding: 24,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+  },
+  profileHeaderSection: {
+    alignItems: "center",
+    marginBottom: 20,
   },
   profileImageContainer: {
     position: "relative",
@@ -468,34 +501,38 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 5,
+    textAlign: "center",
   },
   profileMajor: {
     fontSize: 16,
     color: "#666",
-    marginBottom: 5,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
   },
   profileEmail: {
     fontSize: 14,
-    color: "#999",
+    color: "#666",
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  divider: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 20,
   },
-  cardHeader: {
+  infoSection: {
+    marginBottom: 0,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 12,
   },
-  cardTitle: {
-    fontSize: 18,
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
@@ -517,12 +554,15 @@ const styles = StyleSheet.create({
   skillsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 8,
   },
   skillChip: {
     backgroundColor: "#E3F2FD",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: Colors.mainColor + "30",
   },

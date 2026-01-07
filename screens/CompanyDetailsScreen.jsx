@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Linking,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 import StarRating from "../components/StarRating";
@@ -126,7 +127,10 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
-          <View style={styles.header}>
+          <LinearGradient
+            colors={[Colors.mainColor, '#2d4a7c']}
+            style={styles.header}
+          >
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
@@ -135,7 +139,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Company Profile</Text>
             <View style={{ width: 24 }} />
-          </View>
+          </LinearGradient>
           <View style={styles.centerContainer}>
             <Ionicons name="business-outline" size={80} color="#CCC" />
             <Text style={styles.errorText}>No company data available</Text>
@@ -149,7 +153,10 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <LinearGradient
+          colors={[Colors.mainColor, '#2d4a7c']}
+          style={styles.header}
+        >
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -158,7 +165,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Company Profile</Text>
           <View style={{ width: 24 }} />
-        </View>
+        </LinearGradient>
 
         {/* Content */}
         <ScrollView
@@ -450,7 +457,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
   },
   header: {
-    backgroundColor: Colors.mainColor,
     paddingTop: Platform.OS === "ios" ? 10 : 20,
     paddingBottom: 20,
     paddingHorizontal: 20,

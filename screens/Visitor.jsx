@@ -3,20 +3,31 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   StatusBar,
   SafeAreaView,
   Platform,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "../constants/constants";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
 import MapScreen from "./MapScreen";
+import ModernBottomNav from "../components/visitor/ModernBottomNav";
+import ModernSidebar from "../components/visitor/ModernSidebar";
 
 const Visitor = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState("projects");
+  const [showSidebar, setShowSidebar] = useState(false);
+
+  const handleNavigate = (route) => {
+    if (route === "map") {
+      setActiveTab("map");
+    } else {
+      navigation.navigate(route);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -26,109 +37,54 @@ const Visitor = ({ navigation }) => {
           backgroundColor={Colors.mainColor}
         />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="eye-outline" size={32} color="#fff" />
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerGreeting}>Welcome</Text>
-              <Text style={styles.headerName}>Visitor</Text>
+        {/* Modern Header with Gradient */}
+        <LinearGradient
+          colors={[Colors.mainColor, "#2d4a7c"]}
+          style={styles.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="eye-outline" size={28} color={Colors.mainColor} />
+              </View>
+              <View style={styles.headerTextContainer}>
+                <Text style={styles.headerGreeting}>Welcome</Text>
+                <Text style={styles.headerName}>Visitor</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.headerActions}>
+
             <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => navigation.navigate("ChatbotScreen")}
+              style={styles.menuButton}
+              onPress={() => setShowSidebar(true)}
             >
-              <Ionicons name="chatbubble-ellipses-outline" size={28} color="#fff" />
+              <Ionicons name="menu" size={28} color="#fff" />
             </TouchableOpacity>
           </View>
+        </LinearGradient>
+
+        {/* Content Area with Bottom Padding for Navigation */}
+        <View style={styles.contentWrapper}>
+          {activeTab === "projects" && (
+            <OtherProjectsScreen navigation={navigation} />
+          )}
+          {activeTab === "companies" && (
+            <CompaniesScreen navigation={navigation} />
+          )}
+          {activeTab === "map" && <MapScreen studentProject="Visitor" />}
         </View>
 
-        {/* Tab Navigation - No Header */}
-        <View style={styles.tabContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabScroll}
-          >
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "projects" && styles.activeTab]}
-              onPress={() => setActiveTab("projects")}
-            >
-              <Ionicons
-                name={
-                  activeTab === "projects" ? "briefcase" : "briefcase-outline"
-                }
-                size={20}
-                color={activeTab === "projects" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "projects" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Projects
-              </Text>
-            </TouchableOpacity>
+        {/* Modern Bottom Navigation */}
+        <ModernBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === "companies" && styles.activeTab,
-              ]}
-              onPress={() => setActiveTab("companies")}
-            >
-              <Ionicons
-                name={
-                  activeTab === "companies" ? "business" : "business-outline"
-                }
-                size={20}
-                color={activeTab === "companies" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "companies" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Companies
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "map" && styles.activeTab]}
-              onPress={() => setActiveTab("map")}
-            >
-              <Ionicons
-                name={activeTab === "map" ? "map" : "map-outline"}
-                size={20}
-                color={activeTab === "map" ? "#fff" : Colors.mainColor}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "map" && styles.activeTabText,
-                  { marginLeft: 8 },
-                ]}
-              >
-                Map
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-
-        {/* Content */}
-        {activeTab === "projects" && (
-          <OtherProjectsScreen navigation={navigation} />
-        )}
-        {activeTab === "companies" && (
-          <CompaniesScreen navigation={navigation} />
-        )}
-        {activeTab === "map" && <MapScreen studentProject="Visitor" />}
+        {/* Modern Sidebar */}
+        <ModernSidebar
+          visible={showSidebar}
+          onClose={() => setShowSidebar(false)}
+          chatUnreadCount={0}
+          onNavigate={handleNavigate}
+        />
       </View>
     </SafeAreaView>
   );
@@ -141,78 +97,72 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#f5f7fa",
   },
   header: {
+    paddingTop: Platform.OS === "ios" ? 10 : 20,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.mainColor,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
+  iconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   headerTextContainer: {
-    marginLeft: 12,
+    marginLeft: 15,
   },
   headerGreeting: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.9)",
+    fontWeight: "500",
   },
   headerName: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
     marginTop: 2,
   },
-  headerActions: {
-    flexDirection: "row",
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
+    justifyContent: "center",
   },
-  iconButton: {
-    marginLeft: 12,
-    padding: 8,
-  },
-  tabContainer: {
-    backgroundColor: "#fff",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  tabScroll: {
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-  },
-  tab: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    backgroundColor: "#F0F4FF",
-  },
-  activeTab: {
-    backgroundColor: Colors.mainColor,
-  },
-  tabText: {
-    fontSize: 14,
-    color: Colors.mainColor,
-    fontWeight: "600",
-  },
-  activeTabText: {
-    color: "#fff",
+  contentWrapper: {
+    flex: 1,
+    paddingBottom: 90,
   },
 });
 

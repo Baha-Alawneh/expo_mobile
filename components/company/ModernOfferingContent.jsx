@@ -23,6 +23,7 @@ import {
   getOffering,
   createOffering,
   updateOffering,
+  uploadOfferingImages,
 } from "../../apis/company/Offering";
 import { getOfferingFeedback } from "../../apis/feedback/Feedback";
 
@@ -70,7 +71,12 @@ const ModernOfferingContent = ({ navigation }) => {
       }
 
       const result = await getOffering(userId);
+      console.log("Fetch offering result:", result);
+      
       if (result.success && result.data) {
+        console.log("Offering data from backend:", result.data);
+        console.log("offering_photos from backend:", result.data.offering_photos);
+        
         const photos =
           result.data.offering_photos &&
           Array.isArray(result.data.offering_photos) &&
@@ -80,6 +86,8 @@ const ModernOfferingContent = ({ navigation }) => {
             ? result.data.images
             : [];
 
+        console.log("Processed photos:", photos);
+
         const offeringData = {
           name: result.data.name || "",
           description: result.data.description || "",
@@ -88,8 +96,10 @@ const ModernOfferingContent = ({ navigation }) => {
           offering_id: result.data.offering_id || null,
           company_id: result.data.company_id || null,
           status: result.data.status || "pending",
+          type: result.data.type || "",
         };
 
+        console.log("Setting myOffering to:", offeringData);
         setMyOffering(offeringData);
       } else {
         if (result.notFound) {
@@ -99,6 +109,7 @@ const ModernOfferingContent = ({ navigation }) => {
         }
       }
     } catch (error) {
+      console.error("Error fetching offering:", error);
       setError("An unexpected error occurred");
       setMyOffering(null);
     } finally {
@@ -133,13 +144,28 @@ const ModernOfferingContent = ({ navigation }) => {
 
   const handleEditOffering = () => {
     if (myOffering) {
+      // Map offering_photos to objects with uri property
+      const preparedPhotos =
+        myOffering.offering_photos && Array.isArray(myOffering.offering_photos)
+          ? myOffering.offering_photos.map((photo, index) => {
+              // Handle both string URLs and objects with uri property
+              const photoUrl = typeof photo === "string" ? photo : photo?.uri;
+
+              return {
+                uri: photoUrl,
+                fileName: photoUrl?.split("/").pop() || `photo_${index}.jpg`,
+                type: "image/jpeg",
+              };
+            })
+          : [];
+
       setEditingOffering(true);
       setOfferingType(myOffering.type || "");
       setOfferingData({
         name: myOffering.name || "",
         description: myOffering.description || "",
         price: myOffering.price || "",
-        offering_photos: myOffering.offering_photos || [],
+        offering_photos: preparedPhotos,
         type: myOffering.type || "",
       });
       setShowAddOffering(true);
@@ -158,16 +184,29 @@ const ModernOfferingContent = ({ navigation }) => {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsMultipleSelection: true,
       quality: 1,
     });
 
-    if (!result.canceled && result.assets && result.assets[0]) {
-      setOfferingData((prev) => ({
-        ...prev,
-        offering_photos: [...prev.offering_photos, result.assets[0].uri],
-      }));
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      // Filter valid URIs and map to photo objects
+      const newPhotos = result.assets
+        .map((asset) => asset.uri)
+        .filter((uri) => uri && uri.trim() !== "");
+
+      if (newPhotos.length > 0) {
+        // Map to photo objects with uri property
+        const photoObjects = newPhotos.map((uri, index) => ({
+          uri: uri,
+          fileName: uri.split("/").pop() || `photo_${index}.jpg`,
+          type: "image/jpeg",
+        }));
+
+        setOfferingData((prev) => ({
+          ...prev,
+          offering_photos: [...prev.offering_photos, ...photoObjects],
+        }));
+      }
     }
   };
 
@@ -184,18 +223,13 @@ const ModernOfferingContent = ({ navigation }) => {
       return;
     }
 
-    if (!offeringData.description.trim()) {
-      Alert.alert("Error", "Please enter offering description");
-      return;
-    }
-
-    if (!offeringData.price.trim()) {
-      Alert.alert("Error", "Please enter offering price");
+    // Validate type only for new offerings (not editing)
+    if (!editingOffering && !offeringData.type && !offeringType) {
+      Alert.alert("Error", "Please select an offering type");
       return;
     }
 
     try {
-      setLoading(true);
       const userId = await AsyncStorage.getItem("userId");
 
       if (!userId) {
@@ -203,51 +237,139 @@ const ModernOfferingContent = ({ navigation }) => {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("name", offeringData.name);
-      formData.append("description", offeringData.description);
-      formData.append("price", offeringData.price);
-      formData.append("type", offeringType);
+      // Separate old (existing HTTP URLs) and new (local file URIs) images
+      const oldImages = (offeringData.offering_photos || []).filter(
+        (photo) => photo && photo.uri && photo.uri.startsWith("http")
+      );
+      
+      const newImagesToUpload = (offeringData.offering_photos || []).filter(
+        (photo) => photo && photo.uri && !photo.uri.startsWith("http")
+      );
 
-      if (offeringData.offering_photos && offeringData.offering_photos.length > 0) {
-        offeringData.offering_photos.forEach((uri, index) => {
-          const isNewImage = uri.startsWith("file://") || uri.startsWith("content://");
-          if (isNewImage) {
-            const uriParts = uri.split(".");
-            const fileType = uriParts[uriParts.length - 1];
-            formData.append("offering_photos", {
-              uri: uri,
-              name: `offering_${index}.${fileType}`,
-              type: `image/${fileType}`,
-            });
-          }
-        });
+      // Don't send image objects in the create/update payload
+      const offeringPayload = {
+        name: offeringData.name.trim(),
+        description: offeringData.description?.trim() || "",
+        price: offeringData.price?.trim() || "",
+      };
+
+      // Only add type for new offerings, not when editing
+      if (!editingOffering) {
+        offeringPayload.type = offeringData.type || offeringType;
       }
 
       let result;
-      if (editingOffering && myOffering?.offering_id) {
-        formData.append("offering_id", myOffering.offering_id);
-        result = await updateOffering(formData);
+      if (editingOffering && myOffering) {
+        result = await updateOffering(userId, offeringPayload);
       } else {
-        result = await createOffering(userId, formData);
+        result = await createOffering(userId, offeringPayload);
       }
 
       if (result.success) {
-        Alert.alert(
-          "Success",
-          editingOffering
-            ? "Offering updated successfully"
-            : "Offering created successfully"
-        );
+        // Handle image updates
+        if (editingOffering) {
+          // Extract S3 keys from old HTTP URLs that should be kept
+          const oldImagesToKeep = oldImages.map(photo => {
+            const url = photo.uri;
+            // Extract S3 key from signed URL (after amazonaws.com/)
+            const match = url.match(/amazonaws\.com\/(.+?)(\?|$)/);
+            return match ? decodeURIComponent(match[1]) : null;
+          }).filter(Boolean);
+          
+          console.log("Old images to keep (S3 keys):", oldImagesToKeep);
+          console.log("New images to upload:", newImagesToUpload.length);
+          
+          // Always upload if there are changes (new images or removed images)
+          const hasImageChanges = newImagesToUpload.length > 0 || 
+                                  (myOffering.offering_photos && 
+                                   oldImages.length !== myOffering.offering_photos.length);
+          
+          if (hasImageChanges || newImagesToUpload.length > 0 || oldImagesToKeep.length > 0) {
+            try {
+              if (newImagesToUpload.length > 0 || oldImagesToKeep.length < (myOffering.offering_photos?.length || 0)) {
+                Alert.alert("Uploading", "Updating offering images...");
+
+                const uploadResult = await uploadOfferingImages(
+                  userId,
+                  newImagesToUpload,
+                  oldImagesToKeep
+                );
+
+                if (uploadResult.success) {
+                  Alert.alert("Success", "Offering and images updated successfully!");
+                } else {
+                  Alert.alert(
+                    "Warning",
+                    "Offering saved but image upload failed: " + uploadResult.message
+                  );
+                }
+              } else {
+                Alert.alert("Success", "Offering updated successfully!");
+              }
+            } catch (error) {
+              console.error("Image upload error:", error);
+              Alert.alert(
+                "Warning",
+                "Offering saved but image upload failed: " + error.message
+              );
+            }
+          } else {
+            Alert.alert("Success", "Offering updated successfully!");
+          }
+        } else {
+          // Creating new offering
+          if (newImagesToUpload.length > 0) {
+            try {
+              Alert.alert("Uploading", "Uploading offering images...");
+
+              const uploadResult = await uploadOfferingImages(
+                userId,
+                newImagesToUpload,
+                []
+              );
+
+              if (uploadResult.success) {
+                Alert.alert("Success", "Offering and images added successfully!");
+              } else {
+                Alert.alert(
+                  "Warning",
+                  "Offering saved but image upload failed: " + uploadResult.message
+                );
+              }
+            } catch (error) {
+              console.error("Image upload error:", error);
+              Alert.alert(
+                "Warning",
+                "Offering saved but image upload failed: " + error.message
+              );
+            }
+          } else {
+            Alert.alert("Success", "Offering added successfully!");
+          }
+        }
+
+        // Safely set offering data
+        if (result.data) {
+          setMyOffering(result.data);
+        }
+        
+        setOfferingData({
+          name: "",
+          description: "",
+          price: "",
+          offering_photos: [],
+          type: "",
+        });
         setShowAddOffering(false);
+        setEditingOffering(false);
+
         await fetchMyOffering();
       } else {
         Alert.alert("Error", result.message || "Failed to save offering");
       }
     } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred");
-    } finally {
-      setLoading(false);
+      console.error("Save offering error:", error);
+      Alert.alert("Error", error.message || "An unexpected error occurred");
     }
   };
 
