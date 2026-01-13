@@ -26,6 +26,8 @@ const Visitor = ({ navigation }) => {
   const handleNavigate = (route) => {
     if (route === "map") {
       setActiveTab("map");
+    } else if (route === "ReelsScreen") {
+      navigation.navigate("ReelsScreen", { userRole: "visitor" });
     } else {
       navigation.navigate(route);
     }

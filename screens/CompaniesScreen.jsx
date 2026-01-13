@@ -260,31 +260,25 @@ const CompaniesScreen = ({ navigation }) => {
         }
         ListEmptyComponent={renderEmptyState}
         renderItem={({ item }) => {
-          // Get the first offering image
-          console.log(
-            "Offering item:",
-            item.company_name,
-            "offering_photos:",
-            item.offering_photos
-          );
+          // Get the first offering image - handle both string URLs and objects
           let offeringImage = null;
+
           if (
             item.offering_photos &&
             Array.isArray(item.offering_photos) &&
             item.offering_photos.length > 0
           ) {
-            // Find the first valid image - handle both string URLs and objects with uri property
-            const firstPhoto = item.offering_photos.find(
-              (photo) => photo && (typeof photo === "string" || photo.uri)
-            );
+            const firstPhoto = item.offering_photos[0];
 
-            if (firstPhoto) {
-              // If it's an object with uri property, extract it; otherwise use as-is
-              offeringImage =
-                typeof firstPhoto === "string" ? firstPhoto : firstPhoto.uri;
+            // Check if it's a string (URL) or object
+            if (typeof firstPhoto === "string") {
+              offeringImage = firstPhoto;
+            } else if (firstPhoto && firstPhoto.uri) {
+              offeringImage = firstPhoto.uri;
             }
+
+            console.log("Offering image URL:", offeringImage);
           }
-          console.log("Offering image URL:", offeringImage);
 
           return (
             <TouchableOpacity

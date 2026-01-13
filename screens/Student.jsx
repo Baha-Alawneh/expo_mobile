@@ -609,6 +609,8 @@ const Student = ({ navigation }) => {
   const handleNavigateFromSidebar = (route) => {
     if (route === "map") {
       setActiveTab("map");
+    } else if (route === "ReelsScreen") {
+      navigation.navigate("ReelsScreen", { userRole: "student" });
     } else {
       navigation.navigate(route);
     }
@@ -729,6 +731,13 @@ const Student = ({ navigation }) => {
               >
                 <View style={styles.iconButtonInner}>
                   <Ionicons name="menu" size={24} color="#fff" />
+                  {chatUnreadCount > 0 && (
+                    <View style={styles.headerBadge}>
+                      <Text style={styles.headerBadgeText}>
+                        {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             </View>
@@ -1126,6 +1135,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
+  },
+  headerBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: "#ef4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: Colors.mainColor,
+  },
+  headerBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
   },
   notificationBadge: {
     position: "absolute",

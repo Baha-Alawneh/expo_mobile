@@ -14,7 +14,7 @@ import { getDashboardStats } from "../apis/admin/Admin";
 
 const { width } = Dimensions.get("window");
 
-const AdminDashboard = ({ navigation, onNavigateToAnalytics }) => {
+const AdminDashboard = ({ navigation, onNavigateToAnalytics, onTabChange }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,7 +65,7 @@ const AdminDashboard = ({ navigation, onNavigateToAnalytics }) => {
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#6C5CE7" }]}
-              onPress={() => navigation.navigate("Projects")}
+              onPress={() => onTabChange && onTabChange("projects")}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="document-text" size={24} color="#FFF" />
@@ -80,7 +80,7 @@ const AdminDashboard = ({ navigation, onNavigateToAnalytics }) => {
 
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#00B894" }]}
-              onPress={() => navigation.navigate("Offers")}
+              onPress={() => onTabChange && onTabChange("offers")}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="briefcase" size={24} color="#FFF" />
@@ -95,7 +95,7 @@ const AdminDashboard = ({ navigation, onNavigateToAnalytics }) => {
 
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#FD79A8" }]}
-              onPress={() => navigation.navigate("Notify")}
+              onPress={() => onTabChange && onTabChange("notify")}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="send" size={24} color="#FFF" />

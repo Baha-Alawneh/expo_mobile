@@ -138,7 +138,7 @@ const Admin = ({ navigation }) => {
             )}
             
             <View style={styles.contentContainer}>
-              {activeTab === "dashboard" && <AdminDashboard navigation={navigation} onNavigateToAnalytics={handleNavigateToAnalytics} />}
+              {activeTab === "dashboard" && <AdminDashboard navigation={navigation} onNavigateToAnalytics={handleNavigateToAnalytics} onTabChange={handleTabChange} />}
               {activeTab === "projects" && <PendingProjects navigation={navigation} onBack={handleBackToDashboard} />}
               {activeTab === "offers" && <PendingOfferings navigation={navigation} onBack={handleBackToDashboard} />}
               {activeTab === "notify" && <SendNotification navigation={navigation} onBack={handleBackToDashboard} />}

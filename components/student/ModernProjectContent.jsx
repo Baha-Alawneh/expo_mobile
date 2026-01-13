@@ -92,6 +92,8 @@ const ModernProjectContent = ({ navigation }) => {
           description: result.data.description || "",
           video_url: result.data.video_url || "",
           github_link: result.data.github_link || "",
+          partner_email: result.data.partner_email || "",
+          type: result.data.type || "",
           project_photos: photos,
           students: result.data.students || [],
           status: result.data.status || "pending",
@@ -207,14 +209,18 @@ const ModernProjectContent = ({ navigation }) => {
             }))
           : [];
 
-      setProjectData({
+      const newProjectData = {
         title: myProject.title || "",
         description: myProject.description || "",
         video_url: myProject.video_url || "",
         project_photos: preparedPhotos,
         github_link: myProject.github_link || "",
-        partner_email: "",
-      });
+        partner_email: myProject.partner_email || "",
+        type: myProject.type || "",
+      };
+      
+      setProjectData(newProjectData);
+      setStudentType(myProject.type || "");
       setEditingProject(true);
       setShowAddProject(true);
     }

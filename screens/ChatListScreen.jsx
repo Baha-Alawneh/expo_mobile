@@ -9,6 +9,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -19,6 +20,8 @@ import {
   getUsersByType,
   createOrGetChat,
 } from "../utils/chatService";
+import { getStudentData } from "../apis/student/Student";
+import { getCompanyData } from "../apis/company/Company";
 
 const { width } = Dimensions.get("window");
 
@@ -67,20 +70,53 @@ const ChatListScreen = ({ navigation }) => {
 
   const fetchAllUsers = async () => {
     try {
-      // Fetch all user types
-      const [studentsResult, companiesResult, visitorsResult] =
+      // Fetch only students and companies (exclude visitors and admins)
+      const [studentsResult, companiesResult] =
         await Promise.all([
           getUsersByType("student"),
           getUsersByType("company"),
-          getUsersByType("visitor"),
         ]);
 
       // Extract data arrays from results
       const students = studentsResult.success ? studentsResult.data : [];
       const companies = companiesResult.success ? companiesResult.data : [];
-      const visitors = visitorsResult.success ? visitorsResult.data : [];
 
-      const combined = [...students, ...companies, ...visitors].filter(
+      // Fetch profile images from backend API for each user
+      const enrichedStudents = await Promise.all(
+        students.map(async (user) => {
+          try {
+            const profileResult = await getStudentData(user.id);
+            if (profileResult.success && profileResult.data) {
+              return {
+                ...user,
+                photoUrl: profileResult.data.photo_url || user.photoUrl || "",
+              };
+            }
+          } catch (err) {
+            console.log(`Error fetching student ${user.id} profile:`, err);
+          }
+          return user;
+        })
+      );
+
+      const enrichedCompanies = await Promise.all(
+        companies.map(async (user) => {
+          try {
+            const profileResult = await getCompanyData(user.id);
+            if (profileResult.success && profileResult.data) {
+              return {
+                ...user,
+                photoUrl: profileResult.data.profile_image_url || user.photoUrl || "",
+              };
+            }
+          } catch (err) {
+            console.log(`Error fetching company ${user.id} profile:`, err);
+          }
+          return user;
+        })
+      );
+
+      const combined = [...enrichedStudents, ...enrichedCompanies].filter(
         (user) => user.id !== currentUserId // Exclude current user
       );
 
@@ -188,15 +224,38 @@ const ChatListScreen = ({ navigation }) => {
       return <ChatListItem chat={item} onPress={() => handleItemPress(item)} />;
     } else {
       // Render new user (no chat yet)
+      const getAvatarColor = (type) => {
+        switch (type) {
+          case "student":
+            return "#4CAF50";
+          case "company":
+            return "#2196F3";
+          default:
+            return "#9E9E9E";
+        }
+      };
+
       return (
         <TouchableOpacity
           style={styles.newUserItem}
           onPress={() => handleItemPress(item)}
           activeOpacity={0.7}
         >
-          <View style={styles.newUserAvatar}>
-            <Ionicons name="person" size={24} color="#fff" />
-          </View>
+          {item.otherUser.photoUrl ? (
+            <Image
+              source={{ uri: item.otherUser.photoUrl }}
+              style={styles.newUserAvatarImage}
+            />
+          ) : (
+            <View
+              style={[
+                styles.newUserAvatar,
+                { backgroundColor: getAvatarColor(item.otherUser.type) },
+              ]}
+            >
+              <Ionicons name="person" size={24} color="#fff" />
+            </View>
+          )}
           <View style={styles.newUserInfo}>
             <Text style={styles.newUserName}>{item.otherUser.name}</Text>
             <Text style={styles.newUserType}>
@@ -411,6 +470,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+  },
+  newUserAvatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+    backgroundColor: "#f0f0f0",
   },
   newUserInfo: {
     flex: 1,
