@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Text } from
 import Svg, { Rect, G, Text as SvgText, Line, Path, Defs, Pattern, Circle } from 'react-native-svg';
 import { PanGestureHandler, PinchGestureHandler, State } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import { ZONES, getZoneByBoothNumber, CANVAS_WIDTH, CANVAS_HEIGHT } from './mapData';
+import { ZONES, getZoneByBoothNumber, CANVAS_WIDTH, CANVAS_HEIGHT, BOOTH_DATA } from './mapData';
 import { Colors } from '../../constants/constants';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -43,21 +43,29 @@ const InteractiveMapMobile = ({
       return '#10B981'; // Green for user's booth
     }
     
-    const isAssigned = booth.assigned_to_project || booth.assigned_to_company || booth.status !== 'available';
+    const isAssigned = booth.assigned_to_project || booth.assigned_to_company || booth.assigned_to_student_id || booth.assigned_to_company_id || booth.status !== 'available';
     
+    // All booths use the same base zone color
+    const baseColor = ZONE_COLORS[booth.zone_type] || '#94a3b8';
+    
+    // Assigned booths get slightly lighter version (20% lighter)
     if (isAssigned) {
-      // Assigned booths show their zone color at full brightness
-      return ZONE_COLORS[booth.zone_type] || '#94a3b8';
+      const slightlyLighter = {
+        engineering: '#3EB5F5',  // Slightly lighter blue
+        science: '#F87171',      // Slightly lighter red
+        sponsor: '#A78BFA',      // Slightly lighter purple
+        service: '#FBBF24',      // Slightly lighter amber
+      };
+      return slightlyLighter[booth.zone_type] || baseColor;
     }
     
-    // Unassigned booths show zone color at lower opacity (will be handled by opacity)
-    return ZONE_COLORS[booth.zone_type] || '#E2E8F0';
+    return baseColor;
   };
 
   // Get booth opacity
   const getBoothOpacity = (booth) => {
-    const isAssigned = booth.assigned_to_project || booth.assigned_to_company || booth.status !== 'available';
-    return isAssigned ? 1.0 : 0.6;
+    const isAssigned = booth.assigned_to_project || booth.assigned_to_company || booth.assigned_to_student_id || booth.assigned_to_company_id || booth.status !== 'available';
+    return isAssigned ? 0.95 : 1.0; // Just slightly more transparent when assigned
   };
 
   // Render L-shaped booth (corrected: horizontal at top, vertical extends down)
@@ -113,7 +121,12 @@ const InteractiveMapMobile = ({
 
   // Helper to find booth by number
   const findBooth = (boothNumber) => {
-    return booths.find(b => (b.booth_number === boothNumber || b.boothNumber === boothNumber));
+    const found = booths.find(b => (b.booth_number === boothNumber || b.boothNumber === boothNumber));
+    // Fallback to BOOTH_DATA if not found in booths prop (for borders)
+    if (!found) {
+      return BOOTH_DATA.find(b => b.booth_number === boothNumber);
+    }
+    return found;
   };
 
   // Handle booth dragging (for admin only)
@@ -215,11 +228,12 @@ const InteractiveMapMobile = ({
                   fill="url(#dotGrid)"
                 />
 
-                {/* === STRUCTURAL BORDERS (matching web version) === */}
+                {/* === STRUCTURAL BORDERS=== */}
+                <G stroke="#8B4513" strokeWidth="4">
                 
                 {/* 1. Top-Left Corner (96-107) borders */}
                 {findBooth(103) && findBooth(96) && findBooth(107) && findBooth(1) && (
-                  <G stroke="#8B4513" strokeWidth="3">
+                  <>
                     {/* Left vertical wall from 103 down past 107 to booth 1 level */}
                     <Line 
                       x1={findBooth(103).x} 
@@ -255,12 +269,12 @@ const InteractiveMapMobile = ({
                       x2={findBooth(103).x} 
                       y2={findBooth(1).y} 
                     />
-                  </G>
+                  </>
                 )}
 
                 {/* 2. Bottom strips (booths 1-12) borders */}
                 {findBooth(1) && findBooth(6) && findBooth(7) && findBooth(12) && (
-                  <G stroke="#8B4513" strokeWidth="3">
+                  <>
                     {/* Bottom horizontal line under booths 1-6 */}
                     <Line 
                       x1={findBooth(1).x} 
@@ -317,12 +331,12 @@ const InteractiveMapMobile = ({
                       x2={findBooth(12).x + findBooth(12).width + 6.6 * 20} 
                       y2={findBooth(12).y + findBooth(12).height + 1.5 * 20} 
                     />
-                  </G>
+                  </>
                 )}
 
                 {/* 3. L-shaped section (booths 13-23) borders */}
                 {findBooth(13) && findBooth(16) && findBooth(23) && findBooth(12) && (
-                  <G stroke="#8B4513" strokeWidth="3">
+                  <>
                     {/* Bottom horizontal line under booths 13-16 */}
                     <Line 
                       x1={findBooth(13).x} 
@@ -344,12 +358,12 @@ const InteractiveMapMobile = ({
                       x2={findBooth(13).x} 
                       y2={findBooth(12).y + findBooth(12).height + 1.5 * 20} 
                     />
-                  </G>
+                  </>
                 )}
 
                 {/* 4. Top strip (booths 24-31) borders */}
                 {findBooth(24) && findBooth(31) && findBooth(23) && (
-                  <G stroke="#8B4513" strokeWidth="3">
+                  <>
                     {/* Top horizontal line extending to right edge of booth 23 */}
                     <Line 
                       x1={findBooth(31).x} 
@@ -364,8 +378,39 @@ const InteractiveMapMobile = ({
                       x2={findBooth(31).x} 
                       y2={findBooth(24).y - 2 * 20} 
                     />
-                  </G>
+                  </>
                 )}
+
+                {/* 6. Center Sponsors (150-156) - Complete rectangular border */}
+                {findBooth(150) && findBooth(152) && findBooth(154) && (
+                  <>
+                    <Line 
+                      x1={findBooth(152).x} 
+                      y1={findBooth(152).y} 
+                      x2={findBooth(154).x + 70} 
+                      y2={findBooth(152).y} 
+                    />
+                    <Line 
+                      x1={findBooth(154).x + 70} 
+                      y1={findBooth(152).y} 
+                      x2={findBooth(154).x + 70} 
+                      y2={findBooth(150).y + findBooth(150).height} 
+                    />
+                    <Line 
+                      x1={findBooth(152).x} 
+                      y1={findBooth(150).y + findBooth(150).height} 
+                      x2={findBooth(154).x + 70} 
+                      y2={findBooth(150).y + findBooth(150).height} 
+                    />
+                    <Line 
+                      x1={findBooth(152).x} 
+                      y1={findBooth(152).y} 
+                      x2={findBooth(152).x} 
+                      y2={findBooth(150).y + findBooth(150).height} 
+                    />
+                  </>
+                )}
+                </G>
 
                 {/* 5. X-mark inside Left Engineering Loop (82-95) */}
                 {findBooth(89) && findBooth(86) && findBooth(82) && findBooth(93) && (
@@ -517,9 +562,6 @@ const InteractiveMapMobile = ({
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlButton} onPress={handleZoomOut}>
           <Ionicons name="remove" size={26} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.controlButton} onPress={handleResetView}>
-          <Ionicons name="contract" size={20} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.controlButton, styles.fitButton]} 

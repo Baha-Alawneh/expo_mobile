@@ -50,10 +50,6 @@ const MapLegend = ({ collapsed = false, onToggle }) => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
     backgroundColor: '#fff',
     borderRadius: 16,
     shadowColor: '#000',
@@ -62,6 +58,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     overflow: 'hidden',
+    minWidth: 200,
   },
   containerCollapsed: {
     right: undefined,
@@ -92,21 +89,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flexShrink: 0,
   },
   colorBox: {
     width: 24,
     height: 24,
     borderRadius: 6,
+    flexShrink: 0,
   },
   legendText: {
     fontSize: 14,
     color: '#4B5563',
     flex: 1,
+    flexShrink: 1,
   },
   divider: {
+    width: '100%',
     height: 1,
     backgroundColor: '#E5E7EB',
-    marginVertical: 4,
+    marginVertical: 8,
   },
 });
 
