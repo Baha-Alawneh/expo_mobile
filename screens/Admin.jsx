@@ -118,6 +118,16 @@ const DashboardStack = ({ navigation }) => {
     setShowAnalytics(false);
   };
 
+  const handleTabChange = (tabName) => {
+    if (tabName === 'projects') {
+      navigation.navigate('Projects');
+    } else if (tabName === 'offers') {
+      navigation.navigate('Offers');
+    } else if (tabName === 'notify') {
+      navigation.navigate('Notify');
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {!showAnalytics ? (
@@ -130,6 +140,7 @@ const DashboardStack = ({ navigation }) => {
             <AdminDashboard 
               navigation={navigation} 
               onNavigateToAnalytics={handleNavigateToAnalytics}
+              onTabChange={handleTabChange}
             />
           </View>
         </>
