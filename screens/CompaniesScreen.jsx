@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -23,6 +24,7 @@ const CompaniesScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState(null); // null, 'name', 'rating'
   const [sortOrder, setSortOrder] = useState("DESC"); // 'ASC' or 'DESC'
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCompanies = async () => {
     try {
@@ -149,15 +151,41 @@ const CompaniesScreen = ({ navigation }) => {
     return <View style={styles.container}>{renderErrorState()}</View>;
   }
 
+  // Filter companies based on search query
+  const filteredCompanies = companies.filter((company) => {
+    if (!searchQuery.trim()) return true;
+    const searchLower = searchQuery.toLowerCase();
+    const companyName = (company.company_name || "").toLowerCase();
+    const offeringName = (company.offering_name || "").toLowerCase();
+    return companyName.includes(searchLower) || offeringName.includes(searchLower);
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <View>
           <Text style={styles.sectionTitle}>Company Offerings</Text>
           <Text style={styles.sectionSubtitle}>
-            {companies.length} offerings
+            {filteredCompanies.length} offerings
           </Text>
         </View>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search companies by name..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Sorting Options */}
@@ -217,7 +245,7 @@ const CompaniesScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-        data={companies}
+        data={filteredCompanies}
         keyExtractor={(item) =>
           item.company_id?.toString() || item.id?.toString()
         }
@@ -232,31 +260,25 @@ const CompaniesScreen = ({ navigation }) => {
         }
         ListEmptyComponent={renderEmptyState}
         renderItem={({ item }) => {
-          // Get the first offering image
-          console.log(
-            "Offering item:",
-            item.company_name,
-            "offering_photos:",
-            item.offering_photos
-          );
+          // Get the first offering image - handle both string URLs and objects
           let offeringImage = null;
+
           if (
             item.offering_photos &&
             Array.isArray(item.offering_photos) &&
             item.offering_photos.length > 0
           ) {
-            // Find the first valid image - handle both string URLs and objects with uri property
-            const firstPhoto = item.offering_photos.find(
-              (photo) => photo && (typeof photo === "string" || photo.uri)
-            );
+            const firstPhoto = item.offering_photos[0];
 
-            if (firstPhoto) {
-              // If it's an object with uri property, extract it; otherwise use as-is
-              offeringImage =
-                typeof firstPhoto === "string" ? firstPhoto : firstPhoto.uri;
+            // Check if it's a string (URL) or object
+            if (typeof firstPhoto === "string") {
+              offeringImage = firstPhoto;
+            } else if (firstPhoto && firstPhoto.uri) {
+              offeringImage = firstPhoto.uri;
             }
+
+            console.log("Offering image URL:", offeringImage);
           }
-          console.log("Offering image URL:", offeringImage);
 
           return (
             <TouchableOpacity
@@ -375,6 +397,34 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     color: "#666",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    padding: 0,
+  },
+  clearButton: {
+    padding: 5,
   },
   sortingContainer: {
     flexDirection: "row",

@@ -67,10 +67,10 @@ export const loginUser = async (body, navigation) => {
 
     // Handle new response format
     if (response.data.success) {
-      const { token, userId, role } = response.data.data;
+      const { token, userId, role, name, email } = response.data.data;
 
-      // Store authentication data
-      await storeAuthData(token, userId, role);
+      // Store authentication data including name and email
+      await storeAuthData(token, userId, role, name, email);
 
       // Navigate based on role
       if (role === "visitor") {

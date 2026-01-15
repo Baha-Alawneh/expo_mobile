@@ -1,0 +1,260 @@
+import React, { useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Platform,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "../../constants/constants";
+
+const ModernBottomNav = ({ activeTab, onTabChange }) => {
+  // Animation values for each tab
+  const dashboardAnim = useRef(new Animated.Value(activeTab === "dashboard" ? 1 : 0)).current;
+  const projectsAnim = useRef(new Animated.Value(activeTab === "projects" ? 1 : 0)).current;
+  const offersAnim = useRef(new Animated.Value(activeTab === "offers" ? 1 : 0)).current;
+  const notifyAnim = useRef(new Animated.Value(activeTab === "notify" ? 1 : 0)).current;
+
+  const tabs = [
+    {
+      key: "dashboard",
+      icon: "grid",
+      label: "Dashboard",
+      anim: dashboardAnim,
+    },
+    {
+      key: "projects",
+      icon: "folder",
+      label: "Projects",
+      anim: projectsAnim,
+    },
+    {
+      key: "offers",
+      icon: "briefcase",
+      label: "Offers",
+      anim: offersAnim,
+    },
+    {
+      key: "notify",
+      icon: "send",
+      label: "Notify",
+      anim: notifyAnim,
+    },
+  ];
+
+  useEffect(() => {
+    tabs.forEach((tab) => {
+      Animated.spring(tab.anim, {
+        toValue: activeTab === tab.key ? 1 : 0,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 100,
+      }).start();
+    });
+  }, [activeTab]);
+
+  const handleTabPress = (tabKey) => {
+    onTabChange(tabKey);
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.navWrapper}>
+        {/* Background bar */}
+        <View style={styles.navBackground} />
+        
+        {/* Curved notch background - positioned absolutely */}
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.key;
+          if (!isActive) return null;
+          
+          return (
+            <Animated.View
+              key={`notch-${tab.key}`}
+              style={[
+                styles.curvedNotch,
+                {
+                  left: `${(100 / tabs.length) * index + (100 / tabs.length / 2)}%`,
+                  opacity: tab.anim,
+                  transform: [
+                    {
+                      translateX: -40,
+                    },
+                    {
+                      scale: tab.anim,
+                    },
+                  ],
+                },
+              ]}
+            >
+            </Animated.View>
+          );
+        })}
+
+        {/* Tab buttons */}
+        <View style={styles.tabsContainer}>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+
+            // Animated styles
+            const translateY = tab.anim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -10],
+            });
+
+            const scale = tab.anim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.05],
+            });
+
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.tabButton}
+                onPress={() => handleTabPress(tab.key)}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  style={[
+                    styles.tabContent,
+                    {
+                      transform: [{ translateY }],
+                    },
+                  ]}
+                >
+                  {/* Floating circle for active tab */}
+                  {isActive && (
+                    <Animated.View
+                      style={[
+                        styles.activeCircle,
+                        {
+                          opacity: tab.anim,
+                          transform: [{ scale }],
+                        },
+                      ]}
+                    >
+                      <Ionicons name={tab.icon} size={28} color="#fff" />
+                    </Animated.View>
+                  )}
+
+                  {/* Regular icon for inactive tabs */}
+                  {!isActive && (
+                    <View style={styles.inactiveIconWrapper}>
+                      <Ionicons
+                        name={`${tab.icon}-outline`}
+                        size={24}
+                        color="#64748b"
+                      />
+                    </View>
+                  )}
+
+                  {/* Label - shown for all tabs */}
+                  <Text style={[styles.tabLabel, isActive && styles.activeLabel]}>
+                    {tab.label}
+                  </Text>
+                </Animated.View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "transparent",
+    pointerEvents: "box-none",
+  },
+  navWrapper: {
+    marginHorizontal: 20,
+    marginBottom: Platform.OS === "ios" ? 20 : 10,
+    height: 70,
+    position: "relative",
+  },
+  navBackground: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 65,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 30,
+    shadowColor: "#1b2e4f",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  curvedNotch: {
+    position: "absolute",
+    top: -8,
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    height: "100%",
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  tabContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  activeCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.mainColor,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.mainColor,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 30,
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+  },
+  inactiveIconWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  tabLabel: {
+    fontSize: 11,
+    marginTop: 2,
+    letterSpacing: 0.3,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  activeLabel: {
+    color: Colors.mainColor,
+    fontWeight: "700",
+  },
+});
+
+export default ModernBottomNav;

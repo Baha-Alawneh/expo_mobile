@@ -21,7 +21,7 @@ import {
 
 const { width } = Dimensions.get("window");
 
-const PendingOfferings = ({ navigation }) => {
+const PendingOfferings = ({ navigation, onBack }) => {
   const [activeTab, setActiveTab] = useState("pending");
   const [offerings, setOfferings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,7 @@ const PendingOfferings = ({ navigation }) => {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [offeringToReject, setOfferingToReject] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchOfferings();
@@ -257,7 +258,7 @@ const PendingOfferings = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={onBack || (() => navigation.goBack())}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#2D3436" />
@@ -296,6 +297,23 @@ const PendingOfferings = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search offerings by name..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -311,41 +329,56 @@ const PendingOfferings = ({ navigation }) => {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6C5CE7" />
           </View>
-        ) : offerings.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons 
-              name={
-                activeTab === "pending" ? "checkmark-done-circle" :
-                activeTab === "approved" ? "folder-open-outline" :
-                "close-circle-outline"
-              } 
-              size={80} 
-              color="#DFE6E9" 
-            />
-            <Text style={styles.emptyTitle}>
-              {activeTab === "pending" ? "All Clear!" :
-               activeTab === "approved" ? "No Approved Offerings" :
-               "No Rejected Offerings"}
-            </Text>
-            <Text style={styles.emptyText}>
-              {activeTab === "pending" 
-                ? "No pending offerings to review at the moment"
-                : `No ${activeTab} offerings found`}
-            </Text>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.sectionTitle}>
-              {activeTab === "pending" && "Review and approve company offerings"}
-              {activeTab === "approved" && "Successfully approved offerings"}
-              {activeTab === "rejected" && "Rejected offerings"}
-            </Text>
-            {offerings.map((offering, index) => (
-              <OfferingCard key={`${offering.offering_id}-${index}`} offering={offering} />
-            ))}
-            <View style={{ height: 30 }} />
-          </>
-        )}
+        ) : (() => {
+          // Filter offerings based on search query
+          const filteredOfferings = offerings.filter((offering) => {
+            if (!searchQuery.trim()) return true;
+            const searchLower = searchQuery.toLowerCase();
+            const name = (offering.name || "").toLowerCase();
+            const companyName = (offering.company_name || "").toLowerCase();
+            return name.includes(searchLower) || companyName.includes(searchLower);
+          });
+
+          return filteredOfferings.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons 
+                name={searchQuery ? "search-outline" : (
+                  activeTab === "pending" ? "checkmark-done-circle" :
+                  activeTab === "approved" ? "folder-open-outline" :
+                  "close-circle-outline"
+                )} 
+                size={80} 
+                color="#DFE6E9" 
+              />
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? "No Results Found" : (
+                  activeTab === "pending" ? "All Clear!" :
+                  activeTab === "approved" ? "No Approved Offerings" :
+                  "No Rejected Offerings"
+                )}
+              </Text>
+              <Text style={styles.emptyText}>
+                {searchQuery 
+                  ? "Try a different search term"
+                  : activeTab === "pending" 
+                    ? "No pending offerings to review at the moment"
+                    : `No ${activeTab} offerings found`}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.sectionTitle}>
+                {activeTab === "pending" && "Review and approve company offerings"}
+                {activeTab === "approved" && "Successfully approved offerings"}
+                {activeTab === "rejected" && "Rejected offerings"}
+              </Text>
+              {filteredOfferings.map((offering, index) => (
+                <OfferingCard key={`${offering.offering_id}-${index}`} offering={offering} />
+              ))}
+              <View style={{ height: 100 }} />
+            </>
+          );
+        })()}
       </ScrollView>
 
       {/* Rejection Reason Modal */}
@@ -410,8 +443,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#FFF",
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 30,
+    paddingBottom: 10,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -427,7 +460,10 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F5F5F5",
     justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 20,
@@ -476,9 +512,39 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#6C5CE7",
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    padding: 0,
+  },
+  clearButton: {
+    padding: 5,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 80,
   },
   sectionTitle: {
     fontSize: 14,

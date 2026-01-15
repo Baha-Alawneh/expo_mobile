@@ -34,7 +34,7 @@ const TARGET_OPTIONS = [
   { value: "specific", label: "Specific User", icon: "person" },
 ];
 
-const SendNotification = ({ navigation }) => {
+const SendNotification = ({ navigation, onBack }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("notifications");
@@ -221,7 +221,7 @@ const SendNotification = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={onBack || (() => navigation.goBack())}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#2D3436" />
@@ -366,7 +366,7 @@ const SendNotification = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       <IconPicker />
@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#FFF",
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 30,
+    paddingBottom: 10,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -397,9 +397,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   backButton: {
-    width: 40,
+     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F5F5F5",
     justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 20,
@@ -409,6 +412,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 80,
   },
   section: {
     marginTop: 25,

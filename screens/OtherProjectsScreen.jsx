@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -23,6 +24,7 @@ const OtherProjectsScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState(null); // null, 'name', 'rating'
   const [sortOrder, setSortOrder] = useState("DESC"); // 'ASC' or 'DESC'
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchProjects = async () => {
     try {
@@ -123,13 +125,38 @@ const OtherProjectsScreen = ({ navigation }) => {
     return <View style={styles.container}>{renderErrorState()}</View>;
   }
 
+  // Filter projects based on search query
+  const filteredProjects = projects.filter((project) => {
+    if (!searchQuery.trim()) return true;
+    const searchLower = searchQuery.toLowerCase();
+    const title = (project.title || project.project_title || "").toLowerCase();
+    return title.includes(searchLower);
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <View>
           <Text style={styles.sectionTitle}>Other Projects</Text>
-          <Text style={styles.sectionSubtitle}>{projects.length} projects</Text>
+          <Text style={styles.sectionSubtitle}>{filteredProjects.length} projects</Text>
         </View>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search projects by name..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Sorting Options */}
@@ -189,7 +216,7 @@ const OtherProjectsScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-        data={projects}
+        data={filteredProjects}
         keyExtractor={(item) => item.project_id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
@@ -351,6 +378,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginTop: 4,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    padding: 0,
+  },
+  clearButton: {
+    padding: 5,
   },
   sortingContainer: {
     flexDirection: "row",
