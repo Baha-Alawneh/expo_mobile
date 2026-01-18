@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/constants';
-import { getZoneByBoothNumber } from './mapData';
+import { ZONES } from './mapData';
 
 const BoothDetailsModal = ({
   visible,
@@ -23,7 +23,9 @@ const BoothDetailsModal = ({
 }) => {
   if (!booth) return null;
 
-  const zone = getZoneByBoothNumber(booth.booth_number);
+  // Get zone info from booth's zone_type (from database)
+  const zoneKey = booth.zone_type?.toUpperCase() || 'STANDARD';
+  const zone = ZONES[zoneKey] || ZONES.STANDARD;
   const isAssigned = booth.assigned_to_project || booth.assigned_to_company;
   const assignedEntity = booth.project_name || booth.company_name;
   const assignedType = booth.assigned_to_project ? 'Project' : 'Company';

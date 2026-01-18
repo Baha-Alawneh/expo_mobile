@@ -3,7 +3,7 @@ import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Text } from
 import Svg, { Rect, G, Text as SvgText, Line, Path, Defs, Pattern, Circle } from 'react-native-svg';
 import { PanGestureHandler, PinchGestureHandler, State } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import { ZONES, getZoneByBoothNumber, CANVAS_WIDTH, CANVAS_HEIGHT, BOOTH_DATA } from './mapData';
+import { ZONES, CANVAS_WIDTH, CANVAS_HEIGHT } from './mapData';
 import { Colors } from '../../constants/constants';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -18,7 +18,10 @@ const ZONE_COLORS = {
 
 const InteractiveMapMobile = ({ 
   booths = [], 
+  borders = [],
+  buildings = [],
   onBoothPress,
+  onBuildingPress,
   userBooth = null,
   isAdmin = false,
   highlightBoothNumber = null,
@@ -27,15 +30,17 @@ const InteractiveMapMobile = ({
   onBoothDrag,
   onBoothDragEnd
 }) => {
-  const [scale, setScale] = useState(0.25);
-  const [translateX, setTranslateX] = useState(0);
-  const [translateY, setTranslateY] = useState(0);
+  // Divisor 2.5: bigger canvas (9600×6400), bigger booths AND distances
+  // Start zoomed out to fit booths on screen without scrolling
+  const [scale, setScale] = useState(0.5);
+  const [translateX, setTranslateX] = useState(1550);
+  const [translateY, setTranslateY] = useState(250);
   const [draggingBooth, setDraggingBooth] = useState(null);
   
-  const baseScale = useRef(0.35);
+  const baseScale = useRef(0.5);
   const pinchScale = useRef(1);
-  const lastScale = useRef(0.35);
-  const lastTranslate = useRef({ x: 50, y: 100 });
+  const lastScale = useRef(0.5);
+  const lastTranslate = useRef({ x: 1550, y: 250 });
 
   // Get booth color based on status and zone
   const getBoothColor = (booth) => {
@@ -70,11 +75,12 @@ const InteractiveMapMobile = ({
 
   // Render L-shaped booth (corrected: horizontal at top, vertical extends down)
   const renderLShapedBooth = (booth, isLeft) => {
-    const { x, y } = booth;
-    const horizontalWidth = 70;  // 3.5m
-    const horizontalHeight = 60; // 3m
-    const verticalWidth = 50;    // 2.5m
-    const verticalHeight = 48;   // 2.4m
+    const { x, y, width, height } = booth;
+    // L-shape proportions: horizontal bar at top, vertical extension below
+    const horizontalWidth = width;  
+    const horizontalHeight = height * 0.55;
+    const verticalWidth = width * 0.7;
+    const verticalHeight = height * 0.45;
     
     let path;
     if (isLeft) {
@@ -111,22 +117,17 @@ const InteractiveMapMobile = ({
   };
 
   const handleResetView = () => {
-    setScale(0.25);
+    setScale(0.8);
     setTranslateX(0);
     setTranslateY(0);
-    lastScale.current = 0.25;
-    baseScale.current = 0.25;
+    lastScale.current = 0.8;
+    baseScale.current = 0.8;
     lastTranslate.current = { x: 0, y: 0 };
   };
 
   // Helper to find booth by number
   const findBooth = (boothNumber) => {
-    const found = booths.find(b => (b.booth_number === boothNumber || b.boothNumber === boothNumber));
-    // Fallback to BOOTH_DATA if not found in booths prop (for borders)
-    if (!found) {
-      return BOOTH_DATA.find(b => b.booth_number === boothNumber);
-    }
-    return found;
+    return booths.find(b => (b.booth_number === boothNumber || b.boothNumber === boothNumber));
   };
 
   // Handle booth dragging (for admin only)
@@ -228,259 +229,89 @@ const InteractiveMapMobile = ({
                   fill="url(#dotGrid)"
                 />
 
-                {/* === STRUCTURAL BORDERS=== */}
-                <G stroke="#8B4513" strokeWidth="4">
-                
-                {/* 1. Top-Left Corner (96-107) borders */}
-                {findBooth(103) && findBooth(96) && findBooth(107) && findBooth(1) && (
-                  <>
-                    {/* Left vertical wall from 103 down past 107 to booth 1 level */}
-                    <Line 
-                      x1={findBooth(103).x} 
-                      y1={findBooth(107).y + findBooth(107).height} 
-                      x2={findBooth(103).x} 
-                      y2={findBooth(103).y} 
-                    />
-                    {/* Top horizontal wall from 103 to 96 */}
-                    <Line 
-                      x1={findBooth(103).x} 
-                      y1={findBooth(103).y} 
-                      x2={findBooth(96).x + findBooth(96).width} 
-                      y2={findBooth(103).y} 
-                    />
-                    {/* Short vertical stub down from 96 */}
-                    <Line 
-                      x1={findBooth(96).x + findBooth(96).width} 
-                      y1={findBooth(103).y} 
-                      x2={findBooth(96).x + findBooth(96).width} 
-                      y2={findBooth(103).y + findBooth(96).height} 
-                    />
-                    {/* Short vertical stub up from 96 */}
-                    <Line 
-                      x1={findBooth(96).x + findBooth(96).width} 
-                      y1={findBooth(103).y} 
-                      x2={findBooth(96).x + findBooth(96).width} 
-                      y2={findBooth(103).y - 2 * 20} 
-                    />
-                    {/* Left vertical wall continuing down to booth 1 level */}
-                    <Line 
-                      x1={findBooth(103).x} 
-                      y1={findBooth(107).y + findBooth(107).height} 
-                      x2={findBooth(103).x} 
-                      y2={findBooth(1).y} 
-                    />
-                  </>
-                )}
+                {/* Database Borders - scaled by divisor 2.5 */}
+                {borders && borders.length > 0 && borders.map((border, index) => {
+                  // Scale border coordinates using divisor 2.5
+                  const scaledBorder = {
+                    x1: (border.x1 || 0) / 2.5,
+                    y1: (border.y1 || 0) / 2.5,
+                    x2: (border.x2 || 0) / 2.5,
+                    y2: (border.y2 || 0) / 2.5,
+                    thickness: Math.max(1, (border.thickness || 2) / 2.5),
+                    color: border.color || '#94a3b8',
+                    strokeStyle: border.stroke_style || 'solid'
+                  };
 
-                {/* 2. Bottom strips (booths 1-12) borders */}
-                {findBooth(1) && findBooth(6) && findBooth(7) && findBooth(12) && (
-                  <>
-                    {/* Bottom horizontal line under booths 1-6 */}
-                    <Line 
-                      x1={findBooth(1).x} 
-                      y1={findBooth(1).y + findBooth(1).height} 
-                      x2={findBooth(6).x + findBooth(6).width} 
-                      y2={findBooth(1).y + findBooth(1).height} 
-                    />
-                    {/* Bottom horizontal line under booths 7-12 */}
-                    <Line 
-                      x1={findBooth(7).x} 
-                      y1={findBooth(7).y + findBooth(7).height} 
-                      x2={findBooth(12).x + findBooth(12).width} 
-                      y2={findBooth(7).y + findBooth(7).height} 
-                    />
-                    {/* Left side - horizontal left from TOP LEFT corner of booth 1 */}
-                    <Line 
-                      x1={findBooth(1).x} 
-                      y1={findBooth(1).y} 
-                      x2={findBooth(1).x - 6.6 * 20} 
-                      y2={findBooth(1).y} 
-                    />
-                    {/* Left side - vertical down */}
-                    <Line 
-                      x1={findBooth(1).x - 6.6 * 20} 
-                      y1={findBooth(1).y} 
-                      x2={findBooth(1).x - 6.6 * 20} 
-                      y2={findBooth(1).y + findBooth(1).height + 1.5 * 20} 
-                    />
-                    {/* Vertical line from bottom right of booth 6 going down 1.5m */}
-                    <Line 
-                      x1={findBooth(6).x + findBooth(6).width} 
-                      y1={findBooth(1).y + findBooth(1).height} 
-                      x2={findBooth(6).x + findBooth(6).width} 
-                      y2={findBooth(1).y + findBooth(1).height + 1.5 * 20} 
-                    />
-                    {/* Vertical line from bottom left of booth 7 going down 1.5m */}
-                    <Line 
-                      x1={findBooth(7).x} 
-                      y1={findBooth(7).y + findBooth(7).height} 
-                      x2={findBooth(7).x} 
-                      y2={findBooth(7).y + findBooth(7).height + 1.5 * 20} 
-                    />
-                    {/* Right side - horizontal right from TOP RIGHT corner of booth 12 */}
-                    <Line 
-                      x1={findBooth(12).x + findBooth(12).width} 
-                      y1={findBooth(12).y} 
-                      x2={findBooth(12).x + findBooth(12).width + 6.6 * 20} 
-                      y2={findBooth(12).y} 
-                    />
-                    {/* Right side - vertical down */}
-                    <Line 
-                      x1={findBooth(12).x + findBooth(12).width + 6.6 * 20} 
-                      y1={findBooth(12).y} 
-                      x2={findBooth(12).x + findBooth(12).width + 6.6 * 20} 
-                      y2={findBooth(12).y + findBooth(12).height + 1.5 * 20} 
-                    />
-                  </>
-                )}
+                  // Determine stroke dash array based on style
+                  const strokeDasharray = scaledBorder.strokeStyle === 'dashed' ? '5,5' : 
+                                         scaledBorder.strokeStyle === 'dotted' ? '2,2' : 
+                                         undefined;
 
-                {/* 3. L-shaped section (booths 13-23) borders */}
-                {findBooth(13) && findBooth(16) && findBooth(23) && findBooth(12) && (
-                  <>
-                    {/* Bottom horizontal line under booths 13-16 */}
-                    <Line 
-                      x1={findBooth(13).x} 
-                      y1={findBooth(13).y + findBooth(13).height} 
-                      x2={findBooth(16).x + findBooth(16).width} 
-                      y2={findBooth(13).y + findBooth(13).height} 
+                  return (
+                    <Line
+                      key={border.border_id || `border-${index}`}
+                      x1={scaledBorder.x1}
+                      y1={scaledBorder.y1}
+                      x2={scaledBorder.x2}
+                      y2={scaledBorder.y2}
+                      stroke={scaledBorder.color}
+                      strokeWidth={scaledBorder.thickness}
+                      strokeDasharray={strokeDasharray}
+                      opacity={0.8}
                     />
-                    {/* Right vertical line from top to bottom */}
-                    <Line 
-                      x1={findBooth(16).x + findBooth(16).width} 
-                      y1={findBooth(23).y} 
-                      x2={findBooth(16).x + findBooth(16).width} 
-                      y2={findBooth(13).y + findBooth(13).height} 
-                    />
-                    {/* Vertical line from bottom left of booth 13 down to same level as booth 12's border */}
-                    <Line 
-                      x1={findBooth(13).x} 
-                      y1={findBooth(13).y + findBooth(13).height} 
-                      x2={findBooth(13).x} 
-                      y2={findBooth(12).y + findBooth(12).height + 1.5 * 20} 
-                    />
-                  </>
-                )}
+                  );
+                })}
 
-                {/* 4. Top strip (booths 24-31) borders */}
-                {findBooth(24) && findBooth(31) && findBooth(23) && (
-                  <>
-                    {/* Top horizontal line extending to right edge of booth 23 */}
-                    <Line 
-                      x1={findBooth(31).x} 
-                      y1={findBooth(24).y} 
-                      x2={findBooth(23).x + findBooth(23).width} 
-                      y2={findBooth(24).y} 
-                    />
-                    {/* Vertical line going up from top-left corner of booth 31 */}
-                    <Line 
-                      x1={findBooth(31).x} 
-                      y1={findBooth(24).y} 
-                      x2={findBooth(31).x} 
-                      y2={findBooth(24).y - 2 * 20} 
-                    />
-                  </>
-                )}
+                {/* Database Buildings - scaled by divisor 2.5 */}
+                {buildings && buildings.length > 0 && buildings.map((building, index) => {
+                  // Scale building coordinates using divisor 2.5
+                  const scaledBuilding = {
+                    x: (building.x || 0) / 2.5,
+                    y: (building.y || 0) / 2.5,
+                    width: (building.width || 0) / 2.5,
+                    height: (building.height || 0) / 2.5,
+                    color: building.color || '#ffffff',
+                    strokeColor: building.stroke_color || '#6b7280',
+                    labelColor: building.label_color || '#374151',
+                    name: building.name || building.building_number || '',
+                  };
 
-                {/* 6. Center Sponsors (150-156) - Complete rectangular border */}
-                {findBooth(150) && findBooth(152) && findBooth(154) && (
-                  <>
-                    <Line 
-                      x1={findBooth(152).x} 
-                      y1={findBooth(152).y} 
-                      x2={findBooth(154).x + 70} 
-                      y2={findBooth(152).y} 
-                    />
-                    <Line 
-                      x1={findBooth(154).x + 70} 
-                      y1={findBooth(152).y} 
-                      x2={findBooth(154).x + 70} 
-                      y2={findBooth(150).y + findBooth(150).height} 
-                    />
-                    <Line 
-                      x1={findBooth(152).x} 
-                      y1={findBooth(150).y + findBooth(150).height} 
-                      x2={findBooth(154).x + 70} 
-                      y2={findBooth(150).y + findBooth(150).height} 
-                    />
-                    <Line 
-                      x1={findBooth(152).x} 
-                      y1={findBooth(152).y} 
-                      x2={findBooth(152).x} 
-                      y2={findBooth(150).y + findBooth(150).height} 
-                    />
-                  </>
-                )}
-                </G>
+                  // Calculate label position (centered)
+                  const labelX = scaledBuilding.x + scaledBuilding.width / 2;
+                  const labelY = scaledBuilding.y + scaledBuilding.height / 2;
 
-                {/* 5. X-mark inside Left Engineering Loop (82-95) */}
-                {findBooth(89) && findBooth(86) && findBooth(82) && findBooth(93) && (
-                  <G stroke="#0891b2" strokeWidth="1.5" strokeDasharray="5,5" opacity="0.4">
-                    {/* First diagonal */}
-                    <Line 
-                      x1={findBooth(93).x + findBooth(93).width} 
-                      y1={findBooth(93).y} 
-                      x2={findBooth(86).x} 
-                      y2={findBooth(86).y + findBooth(86).height} 
-                    />
-                    {/* Second diagonal */}
-                    <Line 
-                      x1={findBooth(89).x} 
-                      y1={findBooth(89).y} 
-                      x2={findBooth(82).x + findBooth(82).width} 
-                      y2={findBooth(82).y + findBooth(82).height} 
-                    />
-                  </G>
-                )}
-
-                {/* 6. Center Sponsors (150-156) - Complete rectangular border */}
-                {findBooth(150) && findBooth(152) && findBooth(154) && (
-                  <G stroke="#8B4513" strokeWidth="3">
-                    <Line 
-                      x1={findBooth(152).x} 
-                      y1={findBooth(152).y} 
-                      x2={findBooth(154).x + 70} 
-                      y2={findBooth(152).y} 
-                    />
-                    <Line 
-                      x1={findBooth(154).x + 70} 
-                      y1={findBooth(152).y} 
-                      x2={findBooth(154).x + 70} 
-                      y2={findBooth(150).y + findBooth(150).height} 
-                    />
-                    <Line 
-                      x1={findBooth(152).x} 
-                      y1={findBooth(150).y + findBooth(150).height} 
-                      x2={findBooth(154).x + 70} 
-                      y2={findBooth(150).y + findBooth(150).height} 
-                    />
-                    <Line 
-                      x1={findBooth(152).x} 
-                      y1={findBooth(152).y} 
-                      x2={findBooth(152).x} 
-                      y2={findBooth(150).y + findBooth(150).height} 
-                    />
-                  </G>
-                )}
-
-                {/* 7. X-mark inside Right Loop (32-45) */}
-                {findBooth(32) && findBooth(36) && findBooth(39) && findBooth(43) && (
-                  <G stroke="#7f1d1d" strokeWidth="1.5" strokeDasharray="5,5" opacity="0.4">
-                    {/* First diagonal: bottom right of 32 to top left of 39 */}
-                    <Line 
-                      x1={findBooth(32).x + findBooth(32).width} 
-                      y1={findBooth(32).y + findBooth(32).height} 
-                      x2={findBooth(39).x} 
-                      y2={findBooth(39).y} 
-                    />
-                    {/* Second diagonal: bottom left of 36 to top right of 43 */}
-                    <Line 
-                      x1={findBooth(36).x} 
-                      y1={findBooth(36).y + findBooth(36).height} 
-                      x2={findBooth(43).x + findBooth(43).width} 
-                      y2={findBooth(43).y} 
-                    />
-                  </G>
-                )}
+                  return (
+                    <G 
+                      key={building.building_id || `building-${index}`}
+                      onPress={() => onBuildingPress && onBuildingPress(building)}
+                    >
+                      {/* Building background with fill */}
+                      <Rect
+                        x={scaledBuilding.x}
+                        y={scaledBuilding.y}
+                        width={scaledBuilding.width}
+                        height={scaledBuilding.height}
+                        fill={scaledBuilding.color}
+                        stroke={scaledBuilding.strokeColor}
+                        strokeWidth={2}
+                        opacity={0.9}
+                      />
+                      {/* Building label */}
+                      {scaledBuilding.name && (
+                        <SvgText
+                          x={labelX}
+                          y={labelY}
+                          fill={scaledBuilding.labelColor}
+                          fontSize="16"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                        >
+                          {building.building_number ? `#${building.building_number} ` : ''}{scaledBuilding.name}
+                        </SvgText>
+                      )}
+                    </G>
+                  );
+                })}
 
                 {/* Booths */}
                 {booths.map((booth) => {

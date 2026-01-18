@@ -1,0 +1,100 @@
+﻿import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+  ScrollView,
+  RefreshControl,
+  Modal,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../constants/constants';
+import InteractiveMapMobile from '../components/InteractiveMap/InteractiveMapMobile';
+import BoothDetailsModal from '../components/InteractiveMap/BoothDetailsModal';
+import MapLegend from '../components/InteractiveMap/MapLegend';
+import { BOOTH_DATA } from '../components/InteractiveMap/mapData';
+import { API_URL } from '../constants/config';
+
+const MapScreenNew = ({ navigation, route }) => {
+  const { userRole, userId } = route.params || {};
+  
+  const [booths, setBooths] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedBooth, setSelectedBooth] = useState(null);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [userBooth, setUserBooth] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [highlightedBooth, setHighlightedBooth] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showAddBoothModal, setShowAddBoothModal] = useState(false);
+  const [newBoothData, setNewBoothData] = useState({
+    booth_number: '',
+    zone_type: 'engineering',
+    width: 3.0,
+    height: 3.0,
+    location_x: 100,
+    location_y: 100,
+  });
+
+  const isAdmin = userRole === 'admin';
+  
+  console.log('MapScreenNew - userRole:', userRole);
+  console.log('MapScreenNew - isAdmin:', isAdmin);
+
+  // Fetch booths from API
+  useEffect(() => {
+    fetchBooths();
+  }, []);
+
+  const fetchBooths = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/booths`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Extract data array from API response
+        const data = result.data || result;
+        
+        if (Array.isArray(data) && data.length > 0) {
+          // Transform API data to match map format (like web does)
+          const transformedBooths = data.map(booth => ({
+            ...booth,
+            id: booth.booth_number,
+            x: booth.location_x,
+            y: booth.location_y,
+            width: booth.width * 20, // Convert meters to pixels
+            height: booth.height * 20,
+            type: booth.zone_type,
+            label: booth.booth_number,
+            shape: booth.shape_type,
+            status: booth.status || ((booth.assigned_to_project || booth.assigned_to_company) ? 'occupied' : 'available'),
+            assignee: booth.assignee || booth.project_title || booth.company_name,
+          }));
+          
+          setBooths(transformedBooths);
+        } else {
+          // Fallback to layout data if API returns no booths
+          setBooths(BOOTH_DATA);
+        }
+
+        // Find user's booth
+        if (userRole === 'student' || userRole === 'company') {
+          const myBooth = data.find(b => 
+            (userRole === 'student' && b.assigned_to_student_id === userId) ||
+            (userRole === 'company' && b.assigned_to_company_id === userId)
+          );
+          if (myBooth) {
+            setUserBooth(myBooth.booth_number);

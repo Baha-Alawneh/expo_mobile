@@ -29,8 +29,8 @@ import Animated, {
 import { Colors } from '../constants/constants';
 import InteractiveMapMobile from '../components/InteractiveMap/InteractiveMapMobile';
 import BoothDetailsModal from '../components/InteractiveMap/BoothDetailsModal';
+import BuildingModal from '../components/InteractiveMap/BuildingModal';
 import MapLegend from '../components/InteractiveMap/MapLegend';
-import { BOOTH_DATA } from '../components/InteractiveMap/mapData';
 import { API_URL } from '../constants/config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -110,8 +110,9 @@ const AdminFabMenu = ({ visible, onAdd, onAutoAssign, onClear, onRefresh, onAddB
   );
 };
 
-const MapScreenNew = ({ navigation, route }) => {
-  const { userRole, userId } = route.params || {};
+const MapScreenNew = ({ navigation, route, userRole: userRoleProp, userId: userIdProp }) => {
+  // Support both route.params (from navigation) and direct props (from direct component usage)
+  const { userRole, userId } = route?.params || { userRole: userRoleProp, userId: userIdProp };
   
   const [booths, setBooths] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +136,10 @@ const MapScreenNew = ({ navigation, route }) => {
   // Border state
   const [borders, setBorders] = useState([]);
   const [showAddBorderModal, setShowAddBorderModal] = useState(false);
+  
+  // Buildings state
+  const [buildings, setBuildings] = useState([]);
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [newBorderData, setNewBorderData] = useState({
     type: 'structural',
     orientation: 'horizontal',
@@ -174,65 +179,72 @@ const MapScreenNew = ({ navigation, route }) => {
         // Unwrap the response - API returns {success: true, data: [...]}
         const boothsArray = data.data || data.booths || (Array.isArray(data) ? data : []);
         
+        // Fetch borders and buildings
+        fetchBorders();
+        fetchBuildings();
+        
         console.log('✓ Booths array extracted:', Array.isArray(boothsArray) ? `${boothsArray.length} booths` : `NOT AN ARRAY (type: ${typeof boothsArray})`);
         
-        let mergedBooths = BOOTH_DATA;
-        
-        // Check if boothsArray is an array
         if (Array.isArray(boothsArray) && boothsArray.length > 0) {
           const booth36 = boothsArray.find(b => b.booth_number === 36 || b.booth_number === '36');
           console.log('🔍 API booth example (36):', booth36 ? JSON.stringify(booth36) : 'NOT FOUND IN API');
           
-          // Merge API data with booth layout - preserve layout coordinates
-          mergedBooths = BOOTH_DATA.map(layoutBooth => {
-            const apiBooth = boothsArray.find(b => 
-              b.booth_number === layoutBooth.booth_number || 
-              String(b.booth_number) === String(layoutBooth.booth_number)
-            );
-            
-            if (apiBooth) {
-              // Merge but keep layout coordinates (x, y from BOOTH_DATA)
-              return {
-                ...layoutBooth,
-                booth_id: apiBooth.booth_id,
-                zone_type: apiBooth.zone_type || layoutBooth.zone_type,
-                assigned_to_project: apiBooth.assigned_to_project,
-                assigned_to_company: apiBooth.assigned_to_company,
-                assigned_to_student_id: apiBooth.assigned_to_student_id,
-                assigned_to_company_id: apiBooth.assigned_to_company_id,
-                assignee: apiBooth.assignee,
-                status: apiBooth.status,
-                // Keep layout coordinates, don't overwrite with location_x/location_y
-              };
-            }
-            return layoutBooth;
-          });
+          // Convert booths from DB to mobile canvas
+          // Database: positions in map pixels (range ~2000-5200), sizes in METERS
+          // Divisor 2.5: scale EVERYTHING bigger (positions AND sizes)
+          // This maintains proportions: bigger booths AND bigger spacing
+          const convertedBooths = boothsArray.map(apiBooth => ({
+            booth_id: apiBooth.booth_id,
+            booth_number: apiBooth.booth_number,
+            x: (apiBooth.location_x || 0) / 2.5,  // Position: scale by 2.5
+            y: (apiBooth.location_y || 0) / 2.5,  // Position: scale by 2.5
+            width: ((apiBooth.width || 3) * 20) / 2.5,  // Size: scale by 2.5
+            height: ((apiBooth.height || 3) * 20) / 2.5, // Size: scale by 2.5
+            zone_type: apiBooth.zone_type || 'standard',
+            shape: apiBooth.shape_type || 'rectangle',
+            assigned_to_project: apiBooth.assigned_to_project,
+            assigned_to_company: apiBooth.assigned_to_company,
+            assigned_to_student_id: apiBooth.assigned_to_student_id,
+            assigned_to_company_id: apiBooth.assigned_to_company_id,
+            assignee: apiBooth.assignee,
+            status: apiBooth.status || 'available',
+          }));
           
-          console.log('✓ Merged booth data - using API booth_ids (UUIDs)');
-        } else {
-          console.log('⚠️ API returned no booths - using layout data only');
-        }
-        
-        setBooths(mergedBooths);
-
-        // Find user's booth
-        if (userRole === 'student' || userRole === 'company') {
-          const myBooth = mergedBooths.find(b => 
-            (userRole === 'student' && b.assigned_to_student_id === userId) ||
-            (userRole === 'company' && b.assigned_to_company_id === userId)
-          );
-          if (myBooth) {
-            setUserBooth(myBooth.booth_number);
+          console.log(`✓ Loaded ${convertedBooths.length} booths from database (scaled to mobile canvas)`);
+          
+          // Debug: Show first 3 booth coordinates
+          if (convertedBooths.length > 0) {
+            console.log('📍 First 3 booths after scaling:');
+            convertedBooths.slice(0, 3).forEach(b => {
+              console.log(`  Booth ${b.booth_number}: x=${b.x.toFixed(1)}, y=${b.y.toFixed(1)}, w=${b.width.toFixed(1)}, h=${b.height.toFixed(1)}`);
+            });
+            console.log(`📐 Canvas: 9600×6400 (divisor 2.5 - proportional scaling)`);
+            console.log(`📏 3m booth = (3×20)/2.5 = 24 pixels with proportional spacing`);
           }
+          
+          setBooths(convertedBooths);
+
+          // Find user's booth
+          if (userRole === 'student' || userRole === 'company') {
+            const myBooth = convertedBooths.find(b => 
+              (userRole === 'student' && b.assigned_to_student_id === userId) ||
+              (userRole === 'company' && b.assigned_to_company_id === userId)
+            );
+            if (myBooth) {
+              setUserBooth(myBooth.booth_number);
+            }
+          }
+        } else {
+          console.log('⚠️ API returned no booths');
+          setBooths([]);
         }
       } else {
-        // Fallback to layout data
-        setBooths(BOOTH_DATA);
+        console.log('⚠️ Booths fetch failed');
+        setBooths([]);
       }
     } catch (error) {
       console.error('Error fetching booths:', error);
-      // Fallback to layout data
-      setBooths(BOOTH_DATA);
+      setBooths([]);
     } finally {
       setLoading(false);
     }
@@ -377,6 +389,30 @@ const MapScreenNew = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error fetching borders:', error);
       setBorders([]);
+    }
+  };
+
+  const fetchBuildings = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/buildings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const buildingsArray = data.data || data.buildings || (Array.isArray(data) ? data : []);
+        setBuildings(buildingsArray);
+        console.log('✓ Buildings loaded:', buildingsArray.length);
+      } else {
+        console.log('⚠️ No buildings found or endpoint not available');
+        setBuildings([]);
+      }
+    } catch (error) {
+      console.error('Error fetching buildings:', error);
+      setBuildings([]);
     }
   };
 
@@ -757,12 +793,6 @@ const MapScreenNew = ({ navigation, route }) => {
                 <Text style={styles.mapStatusText}>
                   {highlightedBooth ? `Highlighted: ${highlightedBooth}` : 'Live Map'}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.fullscreenBtn} 
-                  onPress={() => setIsFullscreen(!isFullscreen)}
-                >
-                  <Ionicons name={isFullscreen ? "contract" : "expand"} size={18} color="#4B5563" />
-                </TouchableOpacity>
               </View>
 
               <ScrollView
@@ -773,7 +803,10 @@ const MapScreenNew = ({ navigation, route }) => {
               >
                 <InteractiveMapMobile
                   booths={booths}
+                  borders={borders}
+                  buildings={buildings}
                   onBoothPress={handleBoothPress}
+                  onBuildingPress={(building) => setSelectedBuilding(building)}
                   userBoothNumber={userBooth}
                   highlightBoothNumber={highlightedBooth}
                   isFullscreen={isFullscreen}
@@ -791,6 +824,10 @@ const MapScreenNew = ({ navigation, route }) => {
                       const token = await AsyncStorage.getItem('token');
                       const booth = booths.find(b => b.booth_number === boothNumber);
                       if (booth) {
+                        // Convert mobile pixels back to database scale (multiply by 2.5)
+                        const dbX = newX * 2.5;
+                        const dbY = newY * 2.5;
+                        
                         await fetch(`${API_URL}/booths/${booth.booth_id}`, {
                           method: 'PUT',
                           headers: {
@@ -798,8 +835,8 @@ const MapScreenNew = ({ navigation, route }) => {
                             'Content-Type': 'application/json',
                           },
                           body: JSON.stringify({
-                            location_x: newX,
-                            location_y: newY,
+                            location_x: Math.round(dbX),
+                            location_y: Math.round(dbY),
                           }),
                         });
                       }
@@ -1133,6 +1170,12 @@ const MapScreenNew = ({ navigation, route }) => {
           onDeassign={handleDeassign}
           onViewDetails={handleViewDetails}
           isAdmin={isAdmin}
+        />
+
+        <BuildingModal
+          visible={!!selectedBuilding}
+          building={selectedBuilding}
+          onClose={() => setSelectedBuilding(null)}
         />
 
       </SafeAreaView>

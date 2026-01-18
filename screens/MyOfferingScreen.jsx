@@ -508,30 +508,6 @@ const MyOfferingScreenV2 = ({ navigation }) => {
                     {myOffering.name}
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.modernStatusBadge,
-                    {
-                      backgroundColor:
-                        getStatusInfo(myOffering.status).color + "20",
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={getStatusInfo(myOffering.status).icon}
-                    size={16}
-                    color={getStatusInfo(myOffering.status).color}
-                  />
-                  <Text
-                    style={[
-                      styles.modernStatusText,
-                      { color: getStatusInfo(myOffering.status).color },
-                      { marginLeft: 8 },
-                    ]}
-                  >
-                    {getStatusInfo(myOffering.status).text}
-                  </Text>
-                </View>
               </View>
 
               {/* Price Badge */}

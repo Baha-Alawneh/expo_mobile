@@ -489,28 +489,6 @@ const ModernOfferingContent = ({ navigation }) => {
                   <Ionicons name="create-outline" size={20} color="#1b2e4f" />
                 </TouchableOpacity>
               </View>
-              
-              {/* Status Badge */}
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getStatusInfo(myOffering.status).color + "15" },
-                ]}
-              >
-                <Ionicons
-                  name={getStatusInfo(myOffering.status).icon}
-                  size={16}
-                  color={getStatusInfo(myOffering.status).color}
-                />
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: getStatusInfo(myOffering.status).color },
-                  ]}
-                >
-                  {getStatusInfo(myOffering.status).text}
-                </Text>
-              </View>
             </View>
 
             {/* Divider */}
