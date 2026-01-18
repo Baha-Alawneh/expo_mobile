@@ -14,7 +14,7 @@ import { getDashboardStats } from "../apis/admin/Admin";
 
 const { width } = Dimensions.get("window");
 
-const AdminDashboard = ({ navigation }) => {
+const AdminDashboard = ({ navigation, onNavigateToAnalytics, onTabChange }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,14 +48,6 @@ const AdminDashboard = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerGreeting}>Admin Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Overview & Analytics</Text>
-        </View>
-      </View>
-
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -73,7 +65,7 @@ const AdminDashboard = ({ navigation }) => {
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#6C5CE7" }]}
-              onPress={() => navigation.navigate("Projects")}
+              onPress={() => onTabChange && onTabChange("projects")}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="document-text" size={24} color="#FFF" />
@@ -88,7 +80,7 @@ const AdminDashboard = ({ navigation }) => {
 
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#00B894" }]}
-              onPress={() => navigation.navigate("Offers")}
+              onPress={() => onTabChange && onTabChange("offers")}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="briefcase" size={24} color="#FFF" />
@@ -103,7 +95,7 @@ const AdminDashboard = ({ navigation }) => {
 
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#FD79A8" }]}
-              onPress={() => navigation.navigate("Notify")}
+              onPress={() => onTabChange && onTabChange("notify")}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="send" size={24} color="#FFF" />
@@ -113,7 +105,7 @@ const AdminDashboard = ({ navigation }) => {
 
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: "#FDCB6E" }]}
-              onPress={() => navigation.navigate("Analytics")}
+              onPress={onNavigateToAnalytics}
             >
               <View style={styles.actionIconContainer}>
                 <Ionicons name="analytics" size={24} color="#FFF" />
@@ -243,7 +235,7 @@ const AdminDashboard = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -296,6 +288,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 80,
   },
   section: {
     marginTop: 20,

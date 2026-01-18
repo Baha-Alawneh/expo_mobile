@@ -142,7 +142,7 @@ const AnalyticsScreen = () => {
           let labelInterval;
           if (registrations.length <= 7) {
             labelInterval = 1; // Show all dates for week view
-          } else if (registrations.length <= 30) {
+          } else if (registrations.length <= 100) {
             labelInterval = Math.ceil(registrations.length / 6); // Show ~6 labels for month
           } else {
             labelInterval = Math.ceil(registrations.length / 8); // Show ~8 labels for all time
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,

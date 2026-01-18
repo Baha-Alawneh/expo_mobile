@@ -44,15 +44,27 @@ export const getUserRole = async () => {
  * @param {string} token - JWT token
  * @param {string} userId - User ID
  * @param {string} role - User role
+ * @param {string} name - User name (optional)
+ * @param {string} email - User email (optional)
  */
-export const storeAuthData = async (token, userId, role) => {
+export const storeAuthData = async (token, userId, role, name = null, email = null) => {
   try {
-    await AsyncStorage.multiSet([
+    const dataToStore = [
       ["token", token],
       ["userId", userId],
       ["role", role],
       ["loginTime", Date.now().toString()],
-    ]);
+    ];
+    
+    if (name) {
+      dataToStore.push(["userName", name]);
+    }
+    
+    if (email) {
+      dataToStore.push(["userEmail", email]);
+    }
+    
+    await AsyncStorage.multiSet(dataToStore);
   } catch (error) {
     console.error("Error storing auth data:", error);
     throw error;

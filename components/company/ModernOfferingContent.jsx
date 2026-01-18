@@ -652,22 +652,20 @@ const ModernOfferingContent = ({ navigation }) => {
             <View style={styles.formGroup}>
               <Text style={styles.label}>Photos</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {offeringData.offering_photos
-                  .filter((photo) => photo && (typeof photo === 'string' || photo.uri))
-                  .map((photo, index) => {
-                    const imageUri = typeof photo === 'string' ? photo : photo.uri;
-                    return (
-                      <View key={index} style={styles.imagePreviewContainer}>
-                        <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                        <TouchableOpacity
-                          style={styles.removeImageButton}
-                          onPress={() => removeImage(index)}
-                        >
-                          <Ionicons name="close-circle" size={24} color="#FF5252" />
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  })}
+                {offeringData.offering_photos?.map((photo, index) => {
+                  const photoUri = typeof photo === 'string' ? photo : photo.uri;
+                  return (
+                    <View key={index} style={styles.imagePreviewContainer}>
+                      <Image source={{ uri: photoUri }} style={styles.imagePreview} />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#FF5252" />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
                 <TouchableOpacity
                   style={styles.addImageButton}
                   onPress={pickOfferingImage}
@@ -703,21 +701,37 @@ const ModernOfferingContent = ({ navigation }) => {
       >
         <View style={styles.typeModalOverlay}>
           <View style={styles.typeModalContainer}>
-            <Text style={styles.typeModalTitle}>Select Offering Type</Text>
+            <Text style={styles.typeModalTitle}>What is your offering type?</Text>
+            <Text style={styles.typeModalSubtitle}>
+              Select your offering type to continue
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.typeOption}
+              onPress={() => handleTypeSelection("sponser")}
+            >
+              <Ionicons name="trophy" size={32} color="#1b2e4f" />
+              <View style={styles.typeOptionContent}>
+                <Text style={styles.typeOptionText}>Sponsor</Text>
+                <Text style={styles.typeOptionDescription}>
+                  Provide sponsorship opportunities
+                </Text>
+              </View>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.typeOption}
               onPress={() => handleTypeSelection("service")}
             >
-              <Ionicons name="construct-outline" size={24} color="#1b2e4f" />
-              <Text style={styles.typeOptionText}>Service</Text>
+              <Ionicons name="briefcase" size={32} color="#1b2e4f" />
+              <View style={styles.typeOptionContent}>
+                <Text style={styles.typeOptionText}>Service</Text>
+                <Text style={styles.typeOptionDescription}>
+                  Offer professional services
+                </Text>
+              </View>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.typeOption}
-              onPress={() => handleTypeSelection("product")}
-            >
-              <Ionicons name="cube-outline" size={24} color="#1b2e4f" />
-              <Text style={styles.typeOptionText}>Product</Text>
-            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.typeCancelButton}
               onPress={() => setShowTypeSelection(false)}
@@ -1064,25 +1078,41 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   typeModalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#1b2e4f",
-    marginBottom: 20,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  typeModalSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 24,
     textAlign: "center",
   },
   typeOption: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    backgroundColor: "#f5f7fa",
+    padding: 18,
     borderRadius: 12,
-    backgroundColor: "#f0f4ff",
     marginBottom: 12,
-    gap: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  typeOptionContent: {
+    marginLeft: 16,
+    flex: 1,
   },
   typeOptionText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
     color: "#1b2e4f",
+    marginBottom: 2,
+  },
+  typeOptionDescription: {
+    fontSize: 13,
+    color: "#666",
   },
   typeCancelButton: {
     padding: 16,

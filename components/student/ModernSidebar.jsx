@@ -75,6 +75,13 @@ const ModernSidebar = ({
       badge: chatUnreadCount,
     },
     {
+      icon: "play-circle",
+      label: "Reels",
+      route: "ReelsScreen",
+      color: "#ec4899",
+      gradient: ["#ec4899", "#f43f5e"],
+    },
+    {
       icon: "map",
       label: "Event Map",
       route: "map",

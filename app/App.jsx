@@ -17,6 +17,7 @@ import StudentDetailsScreen from "../screens/StudentDetailsScreen";
 import ChatListScreen from "../screens/ChatListScreen";
 import ConversationScreen from "../screens/ConversationScreen";
 import ChatbotScreen from "../screens/ChatbotScreen";
+import ReelsScreen from "../screens/ReelsScreen";
 import Toast from "react-native-toast-message";
 const Stack = createNativeStackNavigator();
 
@@ -99,6 +100,11 @@ export default function App() {
           <Stack.Screen
             name="ChatbotScreen"
             component={ChatbotScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ReelsScreen"
+            component={ReelsScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>

@@ -64,6 +64,20 @@ const ModernSidebar = ({
       color: "#6366f1",
       gradient: ["#6366f1", "#8b5cf6"],
     },
+    {
+      icon: "play-circle",
+      label: "Reels",
+      route: "ReelsScreen",
+      color: "#ec4899",
+      gradient: ["#ec4899", "#f43f5e"],
+    },
+    {
+      icon: "map",
+      label: "Event Map",
+      route: "map",
+      color: "#10b981",
+      gradient: ["#10b981", "#059669"],
+    },
   ];
 
   const handleMenuPress = (route) => {

@@ -748,50 +748,49 @@ const MyOfferingScreenV2 = ({ navigation }) => {
         {/* Offering Type Selection Modal */}
         <Modal
           visible={showTypeSelection}
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           onRequestClose={() => setShowTypeSelection(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>What is your offering type?</Text>
-                <TouchableOpacity onPress={() => setShowTypeSelection(false)}>
-                  <Ionicons name="close" size={28} color="#333" />
-                </TouchableOpacity>
-              </View>
+          <View style={styles.typeModalOverlay}>
+            <View style={styles.typeModalContainer}>
+              <Text style={styles.typeModalTitle}>What is your offering type?</Text>
+              <Text style={styles.typeModalSubtitle}>
+                Select your offering type to continue
+              </Text>
               
-              <View style={styles.typeSelectionContainer}>
-                <Text style={styles.typeSelectionSubtitle}>
-                  Select your offering type to continue
-                </Text>
-                
-                <TouchableOpacity
-                  style={styles.typeOptionButton}
-                  onPress={() => handleTypeSelection('sponser')}
-                >
-                  <View style={styles.typeOptionIcon}>
-                    <Ionicons name="trophy" size={40} color={Colors.mainColor} />
-                  </View>
-                  <Text style={styles.typeOptionTitle}>Sponser</Text>
+              <TouchableOpacity
+                style={styles.typeOption}
+                onPress={() => handleTypeSelection('sponser')}
+              >
+                <Ionicons name="trophy" size={32} color={Colors.mainColor} />
+                <View style={styles.typeOptionContent}>
+                  <Text style={styles.typeOptionText}>Sponsor</Text>
                   <Text style={styles.typeOptionDescription}>
                     Provide sponsorship opportunities
                   </Text>
-                </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.typeOptionButton}
-                  onPress={() => handleTypeSelection('service')}
-                >
-                  <View style={styles.typeOptionIcon}>
-                    <Ionicons name="briefcase" size={40} color={Colors.mainColor} />
-                  </View>
-                  <Text style={styles.typeOptionTitle}>Service</Text>
+              <TouchableOpacity
+                style={styles.typeOption}
+                onPress={() => handleTypeSelection('service')}
+              >
+                <Ionicons name="briefcase" size={32} color={Colors.mainColor} />
+                <View style={styles.typeOptionContent}>
+                  <Text style={styles.typeOptionText}>Service</Text>
                   <Text style={styles.typeOptionDescription}>
                     Offer professional services
                   </Text>
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.typeCancelButton}
+                onPress={() => setShowTypeSelection(false)}
+              >
+                <Text style={styles.typeCancelText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -1163,43 +1162,64 @@ const styles = StyleSheet.create({
   feedbackSection: {
     marginTop: 16,
   },
-  typeSelectionContainer: {
-    padding: 20,
-    gap: 16,
-  },
-  typeSelectionSubtitle: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  typeOptionButton: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 16,
-    padding: 24,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E0E0E0",
-    gap: 8,
-  },
-  typeOptionIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.mainColor + "20",
+  typeModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
   },
-  typeOptionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+  typeModalContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    width: "80%",
+    maxWidth: 320,
+  },
+  typeModalTitle: {
+    fontSize: 22,
+    fontWeight: "700",
     color: "#333",
+    marginBottom: 8,
+    textAlign: "center",
   },
-  typeOptionDescription: {
+  typeModalSubtitle: {
     fontSize: 14,
     color: "#666",
+    marginBottom: 24,
     textAlign: "center",
+  },
+  typeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f7fa",
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  typeOptionContent: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  typeOptionText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  typeOptionDescription: {
+    fontSize: 13,
+    color: "#666",
+  },
+  typeCancelButton: {
+    padding: 16,
+    alignItems: "center",
+  },
+  typeCancelText: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "500",
   },
 });
 

@@ -23,6 +23,7 @@ import CompaniesScreen from "./CompaniesScreen";
 import MapScreenNew from "./MapScreenNew";
 import ModernOfferingContent from "../components/company/ModernOfferingContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAuthData } from "../utils/auth";
 import { getCompanyData, postCompanyData } from "../apis/company/Company";
 import { uploadCompanyFile } from "../apis/company/CompanyFiles";
 import { BASE_URL } from "../constants/config";
@@ -467,9 +468,35 @@ const Company = ({ navigation }) => {
   const handleNavigateFromSidebar = (route) => {
     if (route === "map") {
       setActiveTab("map");
+    } else if (route === "ReelsScreen") {
+      navigation.navigate("ReelsScreen", { userRole: "company" });
     } else {
       navigation.navigate(route);
     }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await clearAuthData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          }
+        }
+      ]
+    );
   };
 
   const handleTabChange = (tab) => {
@@ -533,11 +560,27 @@ const Company = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.iconButton}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <View style={styles.iconButtonInner}>
+                  <Ionicons name="log-out-outline" size={24} color="#fff" />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
                 onPress={() => setShowSidebar(true)}
                 activeOpacity={0.7}
               >
                 <View style={styles.iconButtonInner}>
                   <Ionicons name="menu" size={24} color="#fff" />
+                  {chatUnreadCount > 0 && (
+                    <View style={styles.headerBadge}>
+                      <Text style={styles.headerBadgeText}>
+                        {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             </View>
@@ -900,6 +943,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
+  },
+  headerBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: "#ef4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: Colors.mainColor,
+  },
+  headerBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
   },
   notificationBadge: {
     position: "absolute",
