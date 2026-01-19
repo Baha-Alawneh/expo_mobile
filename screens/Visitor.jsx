@@ -15,7 +15,7 @@ import { Colors } from "../constants/constants";
 import { clearAuthData } from "../utils/auth";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
-import MapScreen from "./MapScreen";
+import MapScreenNew from "./MapScreenNew";
 import ModernBottomNav from "../components/visitor/ModernBottomNav";
 import ModernSidebar from "../components/visitor/ModernSidebar";
 
@@ -108,7 +108,12 @@ const Visitor = ({ navigation }) => {
           {activeTab === "companies" && (
             <CompaniesScreen navigation={navigation} />
           )}
-          {activeTab === "map" && <MapScreen studentProject="Visitor" />}
+          {activeTab === "map" && (
+            <MapScreenNew
+              navigation={navigation}
+              userRole="visitor"
+            />
+          )}
         </View>
 
         {/* Modern Bottom Navigation */}
