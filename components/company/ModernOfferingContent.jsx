@@ -27,7 +27,7 @@ import {
 } from "../../apis/company/Offering";
 import { getOfferingFeedback } from "../../apis/feedback/Feedback";
 
-const ModernOfferingContent = ({ navigation }) => {
+const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
   const [myOffering, setMyOffering] = useState(null);
   const [showAddOffering, setShowAddOffering] = useState(false);
   const [editingOffering, setEditingOffering] = useState(false);
@@ -45,6 +45,8 @@ const ModernOfferingContent = ({ navigation }) => {
     offering_photos: [],
     type: "",
   });
+
+  console.log('🔍 ModernOfferingContent - Company Status:', companyStatus);
 
   const getStatusInfo = (status) => {
     switch (status?.toLowerCase()) {
@@ -75,28 +77,39 @@ const ModernOfferingContent = ({ navigation }) => {
       
       if (result.success && result.data) {
         console.log("Offering data from backend:", result.data);
-        console.log("offering_photos from backend:", result.data.offering_photos);
+        
+        // Backend returns an array of offerings, get the first one
+        const offeringFromBackend = Array.isArray(result.data) ? result.data[0] : result.data;
+        
+        if (!offeringFromBackend) {
+          setMyOffering(null);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+        
+        console.log("offering_photos from backend:", offeringFromBackend.offering_photos);
         
         const photos =
-          result.data.offering_photos &&
-          Array.isArray(result.data.offering_photos) &&
-          result.data.offering_photos.length > 0
-            ? result.data.offering_photos
-            : result.data.images && Array.isArray(result.data.images)
-            ? result.data.images
+          offeringFromBackend.offering_photos &&
+          Array.isArray(offeringFromBackend.offering_photos) &&
+          offeringFromBackend.offering_photos.length > 0
+            ? offeringFromBackend.offering_photos
+            : offeringFromBackend.images && Array.isArray(offeringFromBackend.images)
+            ? offeringFromBackend.images
             : [];
 
         console.log("Processed photos:", photos);
 
         const offeringData = {
-          name: result.data.name || "",
-          description: result.data.description || "",
-          price: result.data.price || "",
+          name: offeringFromBackend.name || "",
+          description: offeringFromBackend.description || "",
+          price: offeringFromBackend.price || "",
           offering_photos: photos,
-          offering_id: result.data.offering_id || null,
-          company_id: result.data.company_id || null,
-          status: result.data.status || "pending",
-          type: result.data.type || "",
+          offering_id: offeringFromBackend.offering_id || null,
+          company_id: offeringFromBackend.company_id || null,
+          status: offeringFromBackend.status || "pending",
+          type: offeringFromBackend.type || "",
         };
 
         console.log("Setting myOffering to:", offeringData);
@@ -124,6 +137,15 @@ const ModernOfferingContent = ({ navigation }) => {
   };
 
   const handleAddOffering = () => {
+    if (companyStatus !== 'approved') {
+      Alert.alert(
+        "Company Not Approved",
+        "Your company needs to be approved by an administrator before you can create offerings.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+    
     setEditingOffering(false);
     setOfferingData({
       name: "",
@@ -418,19 +440,23 @@ const ModernOfferingContent = ({ navigation }) => {
       </View>
       <Text style={styles.emptyStateTitle}>No Offering Yet</Text>
       <Text style={styles.emptyStateText}>
-        Showcase your company's services or products by adding an offering
+        {companyStatus === 'approved' 
+          ? "Showcase your company's services or products by adding an offering"
+          : "Your company needs to be approved before you can add offerings"}
       </Text>
-      <TouchableOpacity style={styles.addButton} onPress={handleAddOffering}>
-        <LinearGradient
-          colors={["#1b2e4f", "#2a4575"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.addButtonGradient}
-        >
-          <Ionicons name="add-circle-outline" size={24} color="#fff" />
-          <Text style={styles.addButtonText}>Add Offering</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+      {companyStatus === 'approved' && (
+        <TouchableOpacity style={styles.addButton} onPress={handleAddOffering}>
+          <LinearGradient
+            colors={["#1b2e4f", "#2a4575"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addButtonGradient}
+          >
+            <Ionicons name="add-circle-outline" size={24} color="#fff" />
+            <Text style={styles.addButtonText}>Add Offering</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -581,6 +607,26 @@ const ModernOfferingContent = ({ navigation }) => {
           </View>
         ) : (
           renderEmptyState()
+        )}
+        
+        {/* Add Another Offering Button - shown when offering exists and company is approved */}
+        {myOffering && companyStatus === 'approved' && (
+          <View style={styles.addAnotherContainer}>
+            <TouchableOpacity
+              style={styles.addAnotherButton}
+              onPress={handleAddOffering}
+            >
+              <LinearGradient
+                colors={["#1b2e4f", "#2a4575"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.addAnotherGradient}
+              >
+                <Ionicons name="add-circle-outline" size={24} color="#fff" />
+                <Text style={styles.addAnotherText}>Add Another Offering</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
 
@@ -805,6 +851,33 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   addButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  addAnotherContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  addAnotherButton: {
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  addAnotherGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  addAnotherText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",

@@ -26,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuthData } from "../utils/auth";
 import { getCompanyData, postCompanyData } from "../apis/company/Company";
 import { uploadCompanyFile } from "../apis/company/CompanyFiles";
+import { getCompanyStatus } from "../apis/company/Offering";
 import { BASE_URL } from "../constants/config";
 import {
   subscribeToUnreadCount,
@@ -54,6 +55,8 @@ const Company = ({ navigation }) => {
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [companyStatus, setCompanyStatus] = useState("pending");
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Company data
   const [companyData, setCompanyData] = useState({
@@ -131,6 +134,26 @@ const Company = ({ navigation }) => {
         unsubscribe();
       }
     };
+  }, []);
+
+  // Fetch company status
+  useEffect(() => {
+    const fetchCompanyStatus = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) return;
+
+        const result = await getCompanyStatus(userId);
+        if (result.success) {
+          setCompanyStatus(result.status || "pending");
+          setRejectionReason(result.rejection_reason || "");
+        }
+      } catch (error) {
+        console.error("Error fetching company status:", error);
+      }
+    };
+
+    fetchCompanyStatus();
   }, []);
 
   // Handle notification tap
@@ -591,7 +614,45 @@ const Company = ({ navigation }) => {
         <View style={styles.contentContainer}>
           {activeTab === "profile" && renderProfileSection()}
           {activeTab === "offering" && (
-            <ModernOfferingContent navigation={navigation} />
+            <>
+              {companyStatus !== "approved" && (
+                <View
+                  style={[
+                    styles.statusBanner,
+                    companyStatus === "rejected"
+                      ? styles.rejectedBanner
+                      : styles.pendingBanner,
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      companyStatus === "rejected"
+                        ? "close-circle"
+                        : "time"
+                    }
+                    size={24}
+                    color="#fff"
+                  />
+                  <View style={styles.statusBannerTextContainer}>
+                    <Text style={styles.statusBannerTitle}>
+                      {companyStatus === "rejected"
+                        ? "Company Rejected"
+                        : "Awaiting Approval"}
+                    </Text>
+                    <Text style={styles.statusBannerText}>
+                      {companyStatus === "rejected"
+                        ? rejectionReason ||
+                          "Your company registration was rejected. Please contact admin for more information."
+                        : "Your company registration is pending admin approval. You can create offerings once approved."}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              <ModernOfferingContent
+                navigation={navigation}
+                companyStatus={companyStatus}
+              />
+            </>
           )}
           {activeTab === "projects" && (
             <OtherProjectsScreen navigation={navigation} />
@@ -1325,6 +1386,37 @@ const styles = StyleSheet.create({
     color: "#94a3b8",
     textAlign: "right",
     fontWeight: "600",
+  },
+  statusBanner: {
+    flexDirection: "row",
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  pendingBanner: {
+    backgroundColor: "#FF9800",
+  },
+  rejectedBanner: {
+    backgroundColor: "#EF4444",
+  },
+  statusBannerTextContainer: {
+    flex: 1,
+  },
+  statusBannerTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  statusBannerText: {
+    color: "#fff",
+    fontSize: 14,
+    lineHeight: 20,
+    opacity: 0.95,
   },
 });
 

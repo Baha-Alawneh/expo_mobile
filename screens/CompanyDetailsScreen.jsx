@@ -17,7 +17,7 @@ import { Colors } from "../constants/constants";
 import StarRating from "../components/StarRating";
 import RatingModal from "../components/RatingModal";
 import FeedbackList from "../components/FeedbackList";
-import { getOfferingByCompanyId } from "../apis/company/Offering";
+import { getOfferingsByCompanyId } from "../apis/company/Offering";
 import {
   getOfferingFeedback,
   getUserOfferingFeedback,
@@ -27,9 +27,10 @@ import { getUserId } from "../utils/auth";
 
 const CompanyDetailsScreen = ({ navigation, route }) => {
   const { company, fromAdmin } = route.params || {};
-  const [offering, setOffering] = useState(null);
+  const [offerings, setOfferings] = useState([]);
   const [loadingOffering, setLoadingOffering] = useState(true);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedOffering, setSelectedOffering] = useState(null);
   const [userFeedback, setUserFeedback] = useState(null);
   const [allFeedback, setAllFeedback] = useState([]);
   const [feedbackStats, setFeedbackStats] = useState({ average: 0, count: 0 });
@@ -44,11 +45,11 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
   }, [company]);
 
   useEffect(() => {
-    if (offering?.offering_id) {
+    if (offerings.length > 0 && offerings[0]?.offering_id) {
       loadFeedbackData();
       checkOwnership();
     }
-  }, [offering?.offering_id]);
+  }, [offerings]);
 
   const checkOwnership = async () => {
     try {
@@ -60,10 +61,10 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
   };
 
   const loadFeedbackData = async () => {
-    if (!offering?.offering_id) return;
+    if (!offerings[0]?.offering_id) return;
 
     try {
-      const feedbackResponse = await getOfferingFeedback(offering.offering_id);
+      const feedbackResponse = await getOfferingFeedback(offerings[0].offering_id);
       if (feedbackResponse.success) {
         setAllFeedback(feedbackResponse.data.feedback || []);
         setFeedbackStats({
@@ -74,7 +75,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 
       try {
         const userFeedbackResponse = await getUserOfferingFeedback(
-          offering.offering_id
+          offerings[0].offering_id
         );
         if (userFeedbackResponse.success && userFeedbackResponse.data) {
           setUserFeedback(userFeedbackResponse.data);
@@ -89,7 +90,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 
   const handleRatingSubmit = async ({ rating, comment }) => {
     try {
-      await submitOfferingFeedback(offering.offering_id, rating, comment);
+      await submitOfferingFeedback(offerings[0].offering_id, rating, comment);
       setShowRatingModal(false);
       loadFeedbackData();
     } catch (error) {
@@ -100,9 +101,9 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
   const fetchOffering = async () => {
     try {
       setLoadingOffering(true);
-      const result = await getOfferingByCompanyId(company.company_id);
+      const result = await getOfferingsByCompanyId(company.company_id);
       if (result.success && result.data) {
-        setOffering(result.data);
+        setOfferings(Array.isArray(result.data) ? result.data : [result.data]);
       }
     } catch (error) {
       console.log("Error fetching offering:", error);
@@ -302,42 +303,100 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
             ) : null}
           </View>
 
-          {/* 3️⃣ THIRD CARD: Company Offering */}
+          {/* 3️⃣ THIRD CARD: Company Offerings */}
           <View style={styles.offeringCard}>
             <View style={styles.cardHeader}>
               <Ionicons name="gift" size={24} color={Colors.mainColor} />
               <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
-                Company Offering
+                Company Offerings {offerings.length > 0 && `(${offerings.length})`}
               </Text>
             </View>
 
             {loadingOffering ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={Colors.mainColor} />
-                <Text style={styles.loadingText}>Loading offering...</Text>
+                <Text style={styles.loadingText}>Loading offerings...</Text>
               </View>
-            ) : offering ? (
+            ) : offerings.length > 0 ? (
               <View>
-                {/* Offer Name/Title */}
-                {offering.name && (
-                  <View style={styles.offeringSection}>
-                    <Text style={styles.offeringLabel}>Offer Name</Text>
-                    <Text style={styles.offeringName}>{offering.name}</Text>
-                  </View>
-                )}
+                {offerings.map((offering, offeringIndex) => (
+                  <View key={offering.offering_id || offeringIndex} style={offeringIndex > 0 && styles.offeringDivider}>
+                    {offerings.length > 1 && (
+                      <Text style={styles.offeringNumber}>Offering {offeringIndex + 1}</Text>
+                    )}
+                    
+                    {/* Offer Name/Title */}
+                    {offering.name && (
+                      <View style={styles.offeringSection}>
+                        <Text style={styles.offeringLabel}>Offer Name</Text>
+                        <Text style={styles.offeringName}>{offering.name}</Text>
+                      </View>
+                    )}
 
-                {/* Offer Description */}
-                {offering.description && (
-                  <View style={styles.offeringSection}>
-                    <Text style={styles.offeringLabel}>Description</Text>
-                    <Text style={styles.offeringDescription}>
-                      {offering.description}
-                    </Text>
-                  </View>
-                )}
+                    {/* Offer Description */}
+                    {offering.description && (
+                      <View style={styles.offeringSection}>
+                        <Text style={styles.offeringLabel}>Description</Text>
+                        <Text style={styles.offeringDescription}>
+                          {offering.description}
+                        </Text>
+                      </View>
+                    )}
 
-                {/* Rating & Feedback Section */}
-                {!fromAdmin && (
+                    {/* Price */}
+                    {offering.price && (
+                      <View style={styles.offeringSection}>
+                        <Text style={styles.offeringLabel}>Price</Text>
+                        <View style={styles.priceBadge}>
+                          <Ionicons
+                            name="pricetag"
+                            size={18}
+                            color={Colors.mainColor}
+                          />
+                          <Text style={[styles.priceText, { marginLeft: 8 }]}>
+                            {offering.price}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* All Offer Images */}
+                    {offering.offering_photos &&
+                      offering.offering_photos.length > 0 && (
+                        <View style={styles.offeringSection}>
+                          <Text style={styles.offeringLabel}>
+                            Images ({offering.offering_photos.length})
+                          </Text>
+                          <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={styles.imagesScroll}
+                          >
+                            {offering.offering_photos.map((photo, index) => (
+                              <View key={index} style={styles.imageContainer}>
+                                <Image
+                                  source={{
+                                    uri:
+                                      typeof photo === "string" ? photo : photo.uri,
+                                  }}
+                                  style={styles.offeringImage}
+                                  resizeMode="cover"
+                                />
+                                <View style={styles.imageNumberBadge}>
+                                  <Text style={styles.imageNumberText}>
+                                    {index + 1}
+                                  </Text>
+                                </View>
+                              </View>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )}
+                  </View>
+                ))}
+
+                {/* Rating & Feedback Section - Show for first offering only */}
+                {!fromAdmin && offerings[0] && (
                   <View style={styles.offeringSection}>
                     <Text style={styles.offeringLabel}>Ratings & Reviews</Text>
                     <View style={styles.ratingContainer}>
@@ -370,56 +429,6 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                     )}
                   </View>
                 )}
-
-                {/* Price */}
-                {offering.price && (
-                  <View style={styles.offeringSection}>
-                    <Text style={styles.offeringLabel}>Price</Text>
-                    <View style={styles.priceBadge}>
-                      <Ionicons
-                        name="pricetag"
-                        size={18}
-                        color={Colors.mainColor}
-                      />
-                      <Text style={[styles.priceText, { marginLeft: 8 }]}>
-                        {offering.price}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* All Offer Images */}
-                {offering.offering_photos &&
-                  offering.offering_photos.length > 0 && (
-                    <View style={styles.offeringSection}>
-                      <Text style={styles.offeringLabel}>
-                        Images ({offering.offering_photos.length})
-                      </Text>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.imagesScroll}
-                      >
-                        {offering.offering_photos.map((photo, index) => (
-                          <View key={index} style={styles.imageContainer}>
-                            <Image
-                              source={{
-                                uri:
-                                  typeof photo === "string" ? photo : photo.uri,
-                              }}
-                              style={styles.offeringImage}
-                              resizeMode="cover"
-                            />
-                            <View style={styles.imageNumberBadge}>
-                              <Text style={styles.imageNumberText}>
-                                {index + 1}
-                              </Text>
-                            </View>
-                          </View>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
               </View>
             ) : (
               <View style={styles.noOfferingContainer}>
@@ -765,6 +774,18 @@ const styles = StyleSheet.create({
   },
   feedbackSection: {
     marginTop: 16,
+  },
+  offeringDivider: {
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  offeringNumber: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.mainColor,
+    marginBottom: 16,
   },
 });
 

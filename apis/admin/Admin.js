@@ -315,3 +315,84 @@ export const getTopRatedOfferings = async () => {
     };
   }
 };
+
+// Get Pending Companies
+export const getPendingCompanies = async () => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+
+    const response = await axios.get(`${BASE_URL}/admin/companies/pending`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to fetch pending companies",
+    };
+  }
+};
+
+// Get Companies by Status
+export const getCompaniesByStatus = async (status) => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+
+    const response = await axios.get(`${BASE_URL}/admin/companies/status/${status}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || `Failed to fetch ${status} companies`,
+    };
+  }
+};
+
+// Update Company Status (Approve/Reject)
+export const updateCompanyStatus = async (companyId, status, rejection_reason = null) => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+
+    const body = { status };
+    if (status === "rejected" && rejection_reason) {
+      body.rejection_reason = rejection_reason;
+    }
+
+    const response = await axios.patch(
+      `${BASE_URL}/admin/companies/${companyId}/status`,
+      body,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return {
+      success: true,
+      message: response.data.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update company status",
+    };
+  }
+};

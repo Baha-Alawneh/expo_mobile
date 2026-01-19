@@ -18,7 +18,7 @@ import { clearAuthData } from "../utils/auth";
 import AdminDashboard from "./AdminDashboard";
 import SendNotification from "./SendNotification";
 import PendingProjects from "./PendingProjects";
-import PendingOfferings from "./PendingOfferings";
+import PendingCompanies from "./PendingCompanies";
 import AnalyticsScreen from "./AnalyticsScreen";
 import MapScreenNew from "./MapScreenNew";
 
@@ -122,7 +122,7 @@ const DashboardStack = ({ navigation }) => {
     if (tabName === 'projects') {
       navigation.navigate('Projects');
     } else if (tabName === 'offers') {
-      navigation.navigate('Offers');
+      navigation.navigate('Companies');
     } else if (tabName === 'notify') {
       navigation.navigate('Notify');
     }
@@ -174,8 +174,8 @@ const Admin = ({ navigation }) => {
             iconName = focused ? "grid" : "grid-outline";
           } else if (route.name === "Projects") {
             iconName = focused ? "folder" : "folder-outline";
-          } else if (route.name === "Offers") {
-            iconName = focused ? "briefcase" : "briefcase-outline";
+          } else if (route.name === "Companies") {
+            iconName = focused ? "business" : "business-outline";
           } else if (route.name === "Map") {
             iconName = focused ? "map" : "map-outline";
           } else if (route.name === "Notify") {
@@ -220,10 +220,10 @@ const Admin = ({ navigation }) => {
         }}
       />
       <Tab.Screen
-        name="Offers"
-        component={PendingOfferings}
+        name="Companies"
+        component={PendingCompanies}
         options={{
-          tabBarLabel: "Offers",
+          tabBarLabel: "Companies",
         }}
       />
       <Tab.Screen

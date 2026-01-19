@@ -349,3 +349,70 @@ export const uploadOfferingImages = async (userId, images, keepImageKeys = []) =
     throw error;
   }
 };
+
+// Get All Offerings by Company ID
+export const getOfferingsByCompanyId = async (companyId) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.get(
+      `${BASE_URL}/companies/${companyId}/offerings`,
+      { headers }
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message || "Offerings fetched successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to fetch offerings",
+        notFound: response.data.notFound || false,
+      };
+    }
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return {
+        success: false,
+        message: "No offerings found",
+        notFound: true,
+        data: [],
+      };
+    }
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to fetch offerings",
+    };
+  }
+};
+
+// Get Company Status
+export const getCompanyStatus = async (userId) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.get(
+      `${BASE_URL}/companies/status/${userId}`,
+      { headers }
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        status: response.data.status,
+        rejection_reason: response.data.rejection_reason,
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to fetch company status",
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to fetch company status",
+    };
+  }
+};
