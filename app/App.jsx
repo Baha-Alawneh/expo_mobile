@@ -18,6 +18,10 @@ import ChatListScreen from "../screens/ChatListScreen";
 import ConversationScreen from "../screens/ConversationScreen";
 import ChatbotScreen from "../screens/ChatbotScreen";
 import ReelsScreen from "../screens/ReelsScreen";
+import JobApplicationsScreen from "../screens/JobApplicationsScreen";
+import JobDetailsScreen from "../screens/JobDetailsScreen";
+import MyApplicationsScreen from "../screens/MyApplicationsScreen";
+import StudentJobsScreen from "../screens/StudentJobsScreen";
 import Toast from "react-native-toast-message";
 const Stack = createNativeStackNavigator();
 
@@ -105,6 +109,26 @@ export default function App() {
           <Stack.Screen
             name="ReelsScreen"
             component={ReelsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="JobApplications"
+            component={JobApplicationsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="JobDetails"
+            component={JobDetailsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="MyApplications"
+            component={MyApplicationsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="StudentJobs"
+            component={StudentJobsScreen}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>

@@ -21,6 +21,7 @@ import * as DocumentPicker from "expo-document-picker";
 import OtherProjectsScreen from "./OtherProjectsScreen";
 import CompaniesScreen from "./CompaniesScreen";
 import MapScreenNew from "./MapScreenNew";
+import StudentJobsScreen from "./StudentJobsScreen";
 import ModernProjectContent from "../components/student/ModernProjectContent";
 import ModernBottomNav from "../components/student/ModernBottomNav";
 import ModernSidebar from "../components/student/ModernSidebar";
@@ -755,6 +756,9 @@ const Student = ({ navigation }) => {
           )}
           {activeTab === "companies" && (
             <CompaniesScreen navigation={navigation} />
+          )}
+          {activeTab === "jobs" && (
+            <StudentJobsScreen navigation={navigation} />
           )}
           {activeTab === "map" && (
             <MapScreenNew

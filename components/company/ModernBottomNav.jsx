@@ -16,6 +16,7 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
   const offeringAnim = useRef(new Animated.Value(activeTab === "offering" ? 1 : 0)).current;
   const projectsAnim = useRef(new Animated.Value(activeTab === "projects" ? 1 : 0)).current;
   const companiesAnim = useRef(new Animated.Value(activeTab === "companies" ? 1 : 0)).current;
+  const jobsAnim = useRef(new Animated.Value(activeTab === "jobs" ? 1 : 0)).current;
   const mapAnim = useRef(new Animated.Value(activeTab === "map" ? 1 : 0)).current;
 
   const tabs = [
@@ -42,6 +43,12 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
       icon: "business",
       label: "Companies",
       anim: companiesAnim,
+    },
+    {
+      key: "jobs",
+      icon: "document-text",
+      label: "Jobs",
+      anim: jobsAnim,
     },
     {
       key: "map",
