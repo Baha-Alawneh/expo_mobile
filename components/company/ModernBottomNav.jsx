@@ -16,6 +16,9 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
   const reelsAnim = useRef(new Animated.Value(activeTab === "reels" ? 1 : 0)).current;
   const profileAnim = useRef(new Animated.Value(activeTab === "profile" ? 1 : 0)).current;
   const offeringAnim = useRef(new Animated.Value(activeTab === "offering" ? 1 : 0)).current;
+  const projectsAnim = useRef(new Animated.Value(activeTab === "projects" ? 1 : 0)).current;
+  const companiesAnim = useRef(new Animated.Value(activeTab === "companies" ? 1 : 0)).current;
+  const jobsAnim = useRef(new Animated.Value(activeTab === "jobs" ? 1 : 0)).current;
   const mapAnim = useRef(new Animated.Value(activeTab === "map" ? 1 : 0)).current;
 
   const tabs = [
@@ -42,6 +45,24 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
       icon: "pricetag",
       label: "Offering",
       anim: offeringAnim,
+    },
+    {
+      key: "projects",
+      icon: "briefcase",
+      label: "Projects",
+      anim: projectsAnim,
+    },
+    {
+      key: "companies",
+      icon: "business",
+      label: "Companies",
+      anim: companiesAnim,
+    },
+    {
+      key: "jobs",
+      icon: "document-text",
+      label: "Jobs",
+      anim: jobsAnim,
     },
     {
       key: "map",

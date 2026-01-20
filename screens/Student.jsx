@@ -21,6 +21,7 @@ import * as DocumentPicker from "expo-document-picker";
 import ExploreScreen from "./ExploreScreen";
 import MapScreenNew from "./MapScreenNew";
 import ReelsScreen from "./ReelsScreen";
+import StudentJobsScreen from "./StudentJobsScreen";
 import ModernProjectContent from "../components/student/ModernProjectContent";
 import ModernBottomNav from "../components/student/ModernBottomNav";
 import ModernSidebar from "../components/student/ModernSidebar";
@@ -755,6 +756,9 @@ const Student = ({ navigation }) => {
           )}
           {activeTab === "reels" && (
             <ReelsScreen navigation={navigation} route={{ params: { userRole: "student", fromNavBar: true } }} />
+          )}
+          {activeTab === "jobs" && (
+            <StudentJobsScreen navigation={navigation} />
           )}
           {activeTab === "map" && (
             <MapScreenNew

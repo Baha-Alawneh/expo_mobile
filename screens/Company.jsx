@@ -21,6 +21,7 @@ import * as ImagePicker from "expo-image-picker";
 import ExploreScreen from "./ExploreScreen";
 import MapScreenNew from "./MapScreenNew";
 import ReelsScreen from "./ReelsScreen";
+import CompanyJobsScreen from "./CompanyJobsScreen";
 import ModernOfferingContent from "../components/company/ModernOfferingContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuthData } from "../utils/auth";
@@ -613,6 +614,7 @@ const Company = ({ navigation }) => {
         {/* Content Area - Fixed between header and bottom nav */}
         <View style={styles.contentContainer}>
           {activeTab === "profile" && renderProfileSection()}
+          {activeTab === "jobs" && <CompanyJobsScreen navigation={navigation} />}
           {activeTab === "offering" && (
             <>
               {companyStatus !== "approved" && (
