@@ -31,11 +31,7 @@ const OtherProjectsScreen = ({ navigation }) => {
       setError(null);
       const userId = await getUserId();
 
-      if (!userId) {
-        Alert.alert("Error", "Please login again");
-        return;
-      }
-
+      // Allow guest users to browse projects (userId can be null for guests)
       const response = await getAllProjectsExceptMine(
         userId,
         sortBy,

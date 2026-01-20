@@ -1,16 +1,15 @@
 import axios from "axios";
 import { BASE_URL } from "../../constants/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAuthHeaders } from "../../utils/auth";
 
 // Get all reels (for feed)
 export const getAllReels = async () => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const headers = await getAuthHeaders();
     
     const response = await axios.get(`${BASE_URL}/reels`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     return response.data;
@@ -23,12 +22,10 @@ export const getAllReels = async () => {
 // Get reels by user ID
 export const getUserReels = async (userId) => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const headers = await getAuthHeaders();
     
     const response = await axios.get(`${BASE_URL}/reels/user/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     return response.data;
@@ -41,12 +38,10 @@ export const getUserReels = async (userId) => {
 // Get a specific reel by ID
 export const getReelById = async (reelId) => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const headers = await getAuthHeaders();
     
     const response = await axios.get(`${BASE_URL}/reels/${reelId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     return response.data;

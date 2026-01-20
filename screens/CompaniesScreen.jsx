@@ -8,13 +8,11 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
-import { getAllCompanies } from "../apis/company/Company";
-import { getAllOfferings } from "../apis/company/Offering";
+import { getApprovedCompanies } from "../apis/company/Company";
 import StarRating from "../components/StarRating";
 
 const CompaniesScreen = ({ navigation }) => {
@@ -22,72 +20,25 @@ const CompaniesScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState(null); // null, 'name', 'rating'
   const [sortOrder, setSortOrder] = useState("DESC"); // 'ASC' or 'DESC'
-  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCompanies = async () => {
     try {
       setError(null);
 
-      // Fetch all offerings with sorting
-      const offeringsResponse = await getAllOfferings(sortBy, sortOrder);
-      console.log("Fetched offerings response:", offeringsResponse);
+      // Fetch only approved companies with sorting
+      const companiesResponse = await getApprovedCompanies(sortBy, sortOrder);
+      console.log("Fetched approved companies response:", companiesResponse);
 
-      if (offeringsResponse.success && offeringsResponse.data) {
-        const offeringsData = offeringsResponse.data || [];
-
-        // Log first offering to see structure
-        if (offeringsData.length > 0) {
-          console.log(
-            "First offering raw data:",
-            JSON.stringify(offeringsData[0], null, 2)
-          );
-        }
-
-        // Fetch companies data to merge
-        const companiesResponse = await getAllCompanies();
-        const companiesMap = new Map(
-          (companiesResponse.data || []).map((c) => [c.company_id, c])
-        );
-
-        // Merge offering data with company data
-        const companiesWithOfferings = offeringsData.map((offering) => {
-          const company = companiesMap.get(offering.company_id) || {};
-          console.log("Processing offering:", {
-            offering_id: offering.offering_id,
-            offering_photos: offering.offering_photos,
-            images: offering.images,
-            has_offering_photos: !!offering.offering_photos,
-            offering_photos_length: offering.offering_photos?.length,
-          });
-          return {
-            ...company,
-            offering_id: offering.offering_id,
-            offering_name: offering.name,
-            offering_description: offering.description,
-            offering_price: offering.price,
-            offering_photos: offering.offering_photos || offering.images || [],
-            average_rating: offering.average_rating || 0,
-            total_ratings: offering.total_ratings || 0,
-          };
-        });
-
-        console.log("Companies with offerings:", companiesWithOfferings);
-        if (companiesWithOfferings.length > 0) {
-          console.log(
-            "First merged company offering_photos:",
-            companiesWithOfferings[0].offering_photos
-          );
-        }
-        setCompanies(companiesWithOfferings);
-      } else if (offeringsResponse.notFound) {
-        setCompanies([]);
+      if (companiesResponse.success && companiesResponse.data) {
+        setCompanies(companiesResponse.data || []);
       } else {
-        setError(offeringsResponse.message || "Failed to fetch offerings");
+        setError(companiesResponse.message || "Failed to fetch companies");
       }
     } catch (err) {
-      console.error("Error fetching companies/offerings:", err);
+      console.error("Error fetching companies:", err);
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -122,7 +73,7 @@ const CompaniesScreen = ({ navigation }) => {
       <Ionicons name="business-outline" size={80} color="#ccc" />
       <Text style={styles.emptyStateText}>No companies found</Text>
       <Text style={styles.emptyStateSubtext}>
-        Participating companies will appear here
+        Approved companies will appear here
       </Text>
     </View>
   );
@@ -156,17 +107,22 @@ const CompaniesScreen = ({ navigation }) => {
     if (!searchQuery.trim()) return true;
     const searchLower = searchQuery.toLowerCase();
     const companyName = (company.company_name || "").toLowerCase();
-    const offeringName = (company.offering_name || "").toLowerCase();
-    return companyName.includes(searchLower) || offeringName.includes(searchLower);
+    const description = (company.description || "").toLowerCase();
+    const address = (company.address || "").toLowerCase();
+    return (
+      companyName.includes(searchLower) ||
+      description.includes(searchLower) ||
+      address.includes(searchLower)
+    );
   });
 
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <View>
-          <Text style={styles.sectionTitle}>Company Offerings</Text>
+          <Text style={styles.sectionTitle}>Companies</Text>
           <Text style={styles.sectionSubtitle}>
-            {filteredCompanies.length} offerings
+            {filteredCompanies.length} approved {filteredCompanies.length === 1 ? 'company' : 'companies'}
           </Text>
         </View>
       </View>
@@ -176,7 +132,7 @@ const CompaniesScreen = ({ navigation }) => {
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search companies by name..."
+          placeholder="Search companies..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#999"
@@ -246,9 +202,7 @@ const CompaniesScreen = ({ navigation }) => {
 
       <FlatList
         data={filteredCompanies}
-        keyExtractor={(item) =>
-          item.company_id?.toString() || item.id?.toString()
-        }
+        keyExtractor={(item) => item.company_id?.toString() || item.id?.toString()}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         refreshControl={
@@ -259,107 +213,91 @@ const CompaniesScreen = ({ navigation }) => {
           />
         }
         ListEmptyComponent={renderEmptyState}
-        renderItem={({ item }) => {
-          // Get the first offering image - handle both string URLs and objects
-          let offeringImage = null;
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.companyCard}
+            onPress={() => {
+              navigation.navigate("CompanyDetailsScreen", {
+                company: item,
+              });
+            }}
+          >
+            {/* Company Image */}
+            <View style={styles.imageContainer}>
+              {item.profile_image_url ? (
+                <Image
+                  source={{ uri: item.profile_image_url }}
+                  style={styles.companyImage}
+                  resizeMode="cover"
+                  onError={(e) =>
+                    console.log("Image load error:", e.nativeEvent.error)
+                  }
+                />
+              ) : (
+                <View style={[styles.companyImage, styles.placeholderImage]}>
+                  <Ionicons name="business" size={40} color="#ccc" />
+                </View>
+              )}
+              {/* Arrow overlay on image */}
+              <View style={styles.arrowOverlay}>
+                <Ionicons name="chevron-forward" size={24} color="#000" />
+              </View>
+            </View>
 
-          if (
-            item.offering_photos &&
-            Array.isArray(item.offering_photos) &&
-            item.offering_photos.length > 0
-          ) {
-            const firstPhoto = item.offering_photos[0];
+            {/* Company Info */}
+            <View style={styles.companyInfo}>
+              <Text style={styles.companyName}>
+                {item.company_name || "Unnamed Company"}
+              </Text>
 
-            // Check if it's a string (URL) or object
-            if (typeof firstPhoto === "string") {
-              offeringImage = firstPhoto;
-            } else if (firstPhoto && firstPhoto.uri) {
-              offeringImage = firstPhoto.uri;
-            }
+              {item.description && (
+                <Text style={styles.companyDescription} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              )}
 
-            console.log("Offering image URL:", offeringImage);
-          }
+              {item.address && (
+                <View style={styles.addressContainer}>
+                  <Ionicons name="location" size={14} color="#666" />
+                  <Text style={styles.addressText} numberOfLines={1}>
+                    {item.address}
+                  </Text>
+                </View>
+              )}
 
-          return (
-            <TouchableOpacity
-              style={styles.companyCard}
-              onPress={() => {
-                navigation.navigate("CompanyDetailsScreen", {
-                  company: item,
-                });
-              }}
-            >
-              <View style={styles.imageContainer}>
-                {offeringImage ? (
-                  <Image
-                    source={{ uri: offeringImage }}
-                    style={styles.offeringImage}
-                    resizeMode="cover"
-                    onError={(e) =>
-                      console.log("Image load error:", e.nativeEvent.error)
-                    }
-                  />
-                ) : (
-                  <View style={[styles.offeringImage, styles.placeholderImage]}>
-                    <Ionicons name="pricetag-outline" size={40} color="#ccc" />
+              {/* Rating */}
+              <View style={styles.ratingContainer}>
+                <StarRating rating={item.average_rating || 0} size={16} />
+                <Text style={styles.ratingText}>
+                  {item.average_rating && !isNaN(item.average_rating)
+                    ? Number(item.average_rating).toFixed(1)
+                    : "0.0"}
+                  {item.total_ratings > 0 && ` (${item.total_ratings})`}
+                </Text>
+              </View>
+
+              <View style={styles.companyFooter}>
+                {item.booth_id && (
+                  <View style={styles.boothTag}>
+                    <Ionicons
+                      name="location"
+                      size={14}
+                      color={Colors.mainColor}
+                    />
+                    <Text style={styles.boothText}>
+                      Booth {item.booth_id}
+                    </Text>
                   </View>
                 )}
-                {/* Arrow overlay on image */}
-                <View style={styles.arrowOverlay}>
-                  <Ionicons name="chevron-forward" size={24} color="#000" />
-                </View>
+                {item.type && (
+                  <View style={styles.typeTag}>
+                    <Text style={styles.typeText}>{item.type}</Text>
+                  </View>
+                )}
               </View>
-
-              <View style={styles.companyInfo}>
-                <Text style={styles.companyName}>
-                  {item.company_name || "Unnamed Company"}
-                </Text>
-
-                {item.offering_name && (
-                  <Text style={styles.offeringName} numberOfLines={1}>
-                    {item.offering_name}
-                  </Text>
-                )}
-
-                {item.offering_description && (
-                  <Text style={styles.offeringDescription} numberOfLines={2}>
-                    {item.offering_description}
-                  </Text>
-                )}
-
-                {item.offering_price && (
-                  <Text style={styles.priceText}>${item.offering_price}</Text>
-                )}
-
-                {/* Rating Stars */}
-                <View style={styles.ratingContainer}>
-                  <StarRating rating={item.average_rating || 0} size={16} />
-                  <Text style={styles.ratingText}>
-                    {item.average_rating
-                      ? item.average_rating.toFixed(1)
-                      : "0.0"}
-                    {item.total_ratings > 0 && ` (${item.total_ratings})`}
-                  </Text>
-                </View>
-
-                <View style={styles.companyFooter}>
-                  {item.booth_id && (
-                    <View style={styles.boothTag}>
-                      <Ionicons
-                        name="location"
-                        size={14}
-                        color={Colors.mainColor}
-                      />
-                      <Text style={styles.boothText}>
-                        Booth {item.booth_id}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
+            </View>
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
@@ -428,22 +366,23 @@ const styles = StyleSheet.create({
   },
   sortingContainer: {
     flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
     gap: 10,
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    backgroundColor: "#FFF",
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#E0E0E0",
     gap: 6,
   },
   sortButtonActive: {
-    backgroundColor: Colors.mainColor + "15",
+    backgroundColor: "#F0F4FF",
     borderColor: Colors.mainColor,
   },
   sortButtonText: {
@@ -456,9 +395,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   clearSortButton: {
-    justifyContent: "center",
+    padding: 8,
+  },
+  ratingContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
+    marginBottom: 12,
+    gap: 8,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
   },
   companyCard: {
     backgroundColor: "#fff",
@@ -475,7 +423,7 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
   },
-  offeringImage: {
+  companyImage: {
     width: "100%",
     height: 200,
     backgroundColor: "#f0f0f0",
@@ -484,7 +432,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: "transparent",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
     width: 36,
     height: 36,
@@ -504,39 +452,27 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 8,
   },
-  offeringName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.mainColor,
-    marginBottom: 6,
-  },
-  offeringDescription: {
+  companyDescription: {
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
     marginBottom: 12,
   },
-  priceText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#4CAF50",
-    marginBottom: 8,
-  },
-  ratingContainer: {
+  addressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
-    marginBottom: 4,
+    marginBottom: 12,
+    gap: 6,
   },
-  ratingText: {
-    marginLeft: 6,
+  addressText: {
     fontSize: 13,
     color: "#666",
-    fontWeight: "500",
+    flex: 1,
   },
   companyFooter: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10,
   },
   boothTag: {
     flexDirection: "row",
@@ -547,16 +483,21 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   boothText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.mainColor,
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: 4,
   },
-  boothText: {
-    fontSize: 14,
-    color: Colors.mainColor,
-    fontWeight: "600",
-    marginLeft: 8,
+  typeTag: {
+    backgroundColor: "#F0F0F0",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  typeText: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
   },
   emptyState: {
     flex: 1,
@@ -573,8 +514,9 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: 14,
     color: "#999",
-    marginTop: 5,
+    marginTop: 8,
     textAlign: "center",
+    paddingHorizontal: 40,
   },
   retryButton: {
     marginTop: 20,

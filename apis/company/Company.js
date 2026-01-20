@@ -45,6 +45,54 @@ export const getAllCompanies = async () => {
   }
 };
 
+export const getApprovedCompanies = async (sortBy = null, sortOrder = "DESC") => {
+  try {
+    const headers = await getAuthHeaders();
+    let url = `${BASE_URL}/companies/approved`;
+
+    // Add query parameters if sorting is specified
+    if (sortBy) {
+      url += `?sortBy=${sortBy}&sortOrder=${sortOrder}`;
+    }
+
+    const response = await axios.get(url, {
+      headers,
+    });
+
+    if (response.data.success) {
+      return {
+        success: true,
+        data: response.data.data,
+        count: response.data.count,
+        message: response.data.message || "Approved companies fetched successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to fetch approved companies",
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      if (error.response.status === 401) {
+        return {
+          success: false,
+          message: "Session expired. Please login again.",
+          unauthorized: true,
+        };
+      }
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};
+
 export const getCompanyData = async (id) => {
   try {
     const headers = await getAuthHeaders();

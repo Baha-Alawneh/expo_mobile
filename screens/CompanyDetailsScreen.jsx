@@ -10,7 +10,9 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Linking,
+  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -24,6 +26,8 @@ import {
   submitOfferingFeedback,
 } from "../apis/feedback/Feedback";
 import { getUserId } from "../utils/auth";
+import { BASE_URL } from "../constants/config";
+import { getAuthHeaders } from "../utils/auth";
 
 const CompanyDetailsScreen = ({ navigation, route }) => {
   const { company, fromAdmin } = route.params || {};
@@ -61,27 +65,59 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
   };
 
   const loadFeedbackData = async () => {
-    if (!offerings[0]?.offering_id) return;
+    if (offerings.length === 0) return;
 
     try {
-      const feedbackResponse = await getOfferingFeedback(offerings[0].offering_id);
-      if (feedbackResponse.success) {
-        setAllFeedback(feedbackResponse.data.feedback || []);
-        setFeedbackStats({
-          average: feedbackResponse.data.average_rating || 0,
-          count: feedbackResponse.data.total_ratings || 0,
-        });
-      }
+      // Fetch feedback for all offerings (entity_type='offer')
+      const allFeedbackPromises = offerings.map(offering => 
+        getOfferingFeedback(offering.offering_id)
+      );
+      const feedbackResponses = await Promise.all(allFeedbackPromises);
 
-      try {
-        const userFeedbackResponse = await getUserOfferingFeedback(
-          offerings[0].offering_id
-        );
-        if (userFeedbackResponse.success && userFeedbackResponse.data) {
-          setUserFeedback(userFeedbackResponse.data);
+      // Aggregate all feedback
+      let allFeedbackData = [];
+      let totalRating = 0;
+      let totalCount = 0;
+
+      feedbackResponses.forEach(response => {
+        if (response.success && response.data) {
+          const feedback = response.data.feedback || [];
+          allFeedbackData = [...allFeedbackData, ...feedback];
+          
+          // Aggregate ratings
+          const offeringAvg = response.data.average_rating || 0;
+          const offeringCount = response.data.total_ratings || 0;
+          totalRating += offeringAvg * offeringCount;
+          totalCount += offeringCount;
         }
-      } catch (error) {
-        console.log("No user feedback yet");
+      });
+
+      setAllFeedback(allFeedbackData);
+      setFeedbackStats({
+        average: totalCount > 0 ? totalRating / totalCount : 0,
+        count: totalCount,
+      });
+
+      // Check if user has rated any offering (skip for guests)
+      const isGuest = await AsyncStorage.getItem("isGuest");
+      if (isGuest !== "true") {
+        const userId = await getUserId();
+        let userRating = null;
+        for (const offering of offerings) {
+          try {
+            const userFeedbackResponse = await getUserOfferingFeedback(offering.offering_id);
+            if (userFeedbackResponse.success && userFeedbackResponse.data) {
+              userRating = userFeedbackResponse.data;
+              break; // Found user's rating
+            }
+          } catch (error) {
+            // Continue checking other offerings
+          }
+        }
+        setUserFeedback(userRating);
+      } else {
+        // Guest user - no personal feedback
+        setUserFeedback(null);
       }
     } catch (error) {
       console.error("Error loading feedback:", error);
@@ -90,11 +126,47 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 
   const handleRatingSubmit = async ({ rating, comment }) => {
     try {
+      // Submit feedback for the first offering as a proxy for rating the company
+      if (!offerings[0]?.offering_id) {
+        Alert.alert("Error", "Unable to submit rating at this time.");
+        return;
+      }
+      
       await submitOfferingFeedback(offerings[0].offering_id, rating, comment);
       setShowRatingModal(false);
       loadFeedbackData();
     } catch (error) {
       console.error("Error submitting rating:", error);
+      Alert.alert("Error", "Failed to submit rating. Please try again.");
+    }
+  };
+
+  const handleDeleteRating = async () => {
+    try {
+      if (!userFeedback?.feedback_id) {
+        Alert.alert("Error", "Unable to delete rating at this time.");
+        return;
+      }
+
+      const response = await fetch(
+        `${BASE_URL}/feedback/${userFeedback.feedback_id}`,
+        {
+          method: "DELETE",
+          headers: await getAuthHeaders(),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        Alert.alert("Success", "Your rating has been deleted.");
+        setShowRatingModal(false);
+        loadFeedbackData();
+      } else {
+        Alert.alert("Error", result.message || "Failed to delete rating.");
+      }
+    } catch (error) {
+      console.error("Error deleting rating:", error);
+      Alert.alert("Error", "Failed to delete rating. Please try again.");
     }
   };
 
@@ -303,7 +375,89 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
             ) : null}
           </View>
 
-          {/* 3️⃣ THIRD CARD: Company Offerings */}
+          {/* 3️⃣ THIRD CARD: Ratings & Reviews */}
+          {!fromAdmin && offerings.length > 0 && (
+            <View style={styles.ratingsCard}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="star" size={24} color={Colors.mainColor} />
+                <Text style={[styles.cardTitle, { marginLeft: 8 }]}>
+                  Ratings & Reviews
+                </Text>
+              </View>
+
+              <View style={styles.ratingOverviewCard}>
+                <View style={styles.ratingValueContainer}>
+                  <Text style={styles.ratingValueLarge}>
+                    {feedbackStats.average.toFixed(1)}
+                  </Text>
+                  <StarRating rating={feedbackStats.average} size={28} />
+                  <Text style={styles.ratingCountLarge}>
+                    {feedbackStats.count}{" "}
+                    {feedbackStats.count === 1 ? "rating" : "ratings"}
+                  </Text>
+                </View>
+
+                {!isOwner && (
+                  <TouchableOpacity
+                    style={styles.rateButtonLarge}
+                    onPress={async () => {
+                      // Check if user is a guest
+                      const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+                      const guestStatus = await AsyncStorage.getItem("isGuest");
+                      
+                      if (guestStatus === "true") {
+                        Alert.alert(
+                          "Login Required",
+                          "Please log in or create an account to rate this company.",
+                          [
+                            {
+                              text: "Cancel",
+                              style: "cancel"
+                            },
+                            {
+                              text: "Login",
+                              onPress: async () => {
+                                await AsyncStorage.removeItem("isGuest");
+                                await AsyncStorage.removeItem("userType");
+                                navigation.reset({
+                                  index: 0,
+                                  routes: [{ name: "Login" }],
+                                });
+                              }
+                            }
+                          ]
+                        );
+                        return;
+                      }
+                      
+                      setShowRatingModal(true);
+                    }}
+                  >
+                    <Ionicons name="star-outline" size={22} color="#fff" />
+                    <Text style={styles.rateButtonTextLarge}>
+                      {userFeedback ? "Edit Rating" : "Rate Company"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Feedback List */}
+              {isOwner && allFeedback.length > 0 && (
+                <View style={styles.feedbackListSection}>
+                  <FeedbackList feedbackList={allFeedback} />
+                </View>
+              )}
+
+              {!isOwner && allFeedback.length === 0 && (
+                <Text style={styles.noReviewsText}>No reviews yet</Text>
+              )}
+              {isOwner && allFeedback.length === 0 && (
+                <Text style={styles.noReviewsText}>No reviews yet</Text>
+              )}
+            </View>
+          )}
+
+          {/* 4️⃣ FOURTH CARD: Company Offerings */}
           <View style={styles.offeringCard}>
             <View style={styles.cardHeader}>
               <Ionicons name="gift" size={24} color={Colors.mainColor} />
@@ -394,41 +548,6 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
                       )}
                   </View>
                 ))}
-
-                {/* Rating & Feedback Section - Show for first offering only */}
-                {!fromAdmin && offerings[0] && (
-                  <View style={styles.offeringSection}>
-                    <Text style={styles.offeringLabel}>Ratings & Reviews</Text>
-                    <View style={styles.ratingContainer}>
-                      <View style={styles.ratingOverview}>
-                        <Text style={styles.ratingValue}>
-                          {feedbackStats.average.toFixed(1)}
-                        </Text>
-                        <StarRating rating={feedbackStats.average} size={24} />
-                        <Text style={styles.ratingCount}>
-                          {feedbackStats.count}{" "}
-                          {feedbackStats.count === 1 ? "rating" : "ratings"}
-                        </Text>
-                      </View>
-                      {!isOwner && (
-                        <TouchableOpacity
-                          style={styles.rateButton}
-                          onPress={() => setShowRatingModal(true)}
-                        >
-                          <Ionicons name="star-outline" size={20} color="#fff" />
-                          <Text style={styles.rateButtonText}>
-                            {userFeedback ? "Edit Rating" : "Rate Offering"}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    {isOwner && allFeedback.length > 0 && (
-                      <View style={styles.feedbackSection}>
-                        <FeedbackList feedbackList={allFeedback} />
-                      </View>
-                    )}
-                  </View>
-                )}
               </View>
             ) : (
               <View style={styles.noOfferingContainer}>
@@ -449,6 +568,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
         visible={showRatingModal}
         onClose={() => setShowRatingModal(false)}
         onSubmit={handleRatingSubmit}
+        onDelete={userFeedback ? handleDeleteRating : null}
         initialRating={userFeedback?.rating}
         initialComment={userFeedback?.comment}
       />
@@ -575,6 +695,68 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
+  
+  // 3️⃣ THIRD CARD: Ratings & Reviews
+  ratingsCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  ratingOverviewCard: {
+    marginTop: 15,
+    paddingVertical: 20,
+    paddingHorizontal: 15,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  ratingValueContainer: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  ratingValueLarge: {
+    fontSize: 48,
+    fontWeight: "bold",
+    color: Colors.mainColor,
+    marginBottom: 8,
+  },
+  ratingCountLarge: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 8,
+  },
+  rateButtonLarge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.mainColor,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    marginTop: 10,
+  },
+  rateButtonTextLarge: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  feedbackListSection: {
+    marginTop: 20,
+  },
+  noReviewsText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 14,
+    fontStyle: "italic",
+    marginTop: 15,
+  },
+  
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",

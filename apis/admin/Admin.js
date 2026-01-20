@@ -316,6 +316,30 @@ export const getTopRatedOfferings = async () => {
   }
 };
 
+// Get Top Rated Companies for Analytics
+export const getTopRatedCompanies = async () => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+
+    const response = await axios.get(`${BASE_URL}/admin/analytics/top-companies`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to fetch top rated companies",
+    };
+  }
+};
+
 // Get Pending Companies
 export const getPendingCompanies = async () => {
   try {

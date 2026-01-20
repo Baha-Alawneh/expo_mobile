@@ -18,9 +18,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "../constants/constants";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import OtherProjectsScreen from "./OtherProjectsScreen";
-import CompaniesScreen from "./CompaniesScreen";
+import ExploreScreen from "./ExploreScreen";
 import MapScreenNew from "./MapScreenNew";
+import ReelsScreen from "./ReelsScreen";
 import ModernProjectContent from "../components/student/ModernProjectContent";
 import ModernBottomNav from "../components/student/ModernBottomNav";
 import ModernSidebar from "../components/student/ModernSidebar";
@@ -44,7 +44,7 @@ import {
 
 const Student = ({ navigation }) => {
   // States
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("explore");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showNotificationDetails, setShowNotificationDetails] = useState(false);
@@ -750,11 +750,11 @@ const Student = ({ navigation }) => {
           {activeTab === "project" && (
             <ModernProjectContent navigation={navigation} />
           )}
-          {activeTab === "projects" && (
-            <OtherProjectsScreen navigation={navigation} />
+          {activeTab === "explore" && (
+            <ExploreScreen navigation={navigation} />
           )}
-          {activeTab === "companies" && (
-            <CompaniesScreen navigation={navigation} />
+          {activeTab === "reels" && (
+            <ReelsScreen navigation={navigation} route={{ params: { userRole: "student", fromNavBar: true } }} />
           )}
           {activeTab === "map" && (
             <MapScreenNew
@@ -1068,8 +1068,8 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 10 : 50,
     paddingBottom: 25,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    // borderBottomLeftRadius: 30,
+    // borderBottomRightRadius: 30,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,

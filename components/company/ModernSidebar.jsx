@@ -74,20 +74,6 @@ const ModernSidebar = ({
       gradient: ["#3b82f6", "#06b6d4"],
       badge: chatUnreadCount,
     },
-    {
-      icon: "play-circle",
-      label: "Reels",
-      route: "ReelsScreen",
-      color: "#ec4899",
-      gradient: ["#ec4899", "#f43f5e"],
-    },
-    {
-      icon: "map",
-      label: "Event Map",
-      route: "map",
-      color: "#10b981",
-      gradient: ["#10b981", "#059669"],
-    },
   ];
 
   const handleMenuPress = (route) => {
@@ -218,8 +204,8 @@ const ModernSidebar = ({
             {/* Additional Info */}
             <View style={styles.footerSection}>
               <View style={styles.divider} />
-              <Text style={styles.footerText}>Version 2.0.0</Text>
-              <Text style={styles.footerSubText}>Modern Company Portal</Text>
+              <Text style={styles.footerText}>Version 1.0.0</Text>
+              <Text style={styles.footerSubText}>TEDI-Najah Expo</Text>
             </View>
           </ScrollView>
         </Animated.View>

@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -23,6 +24,8 @@ import {
   submitProjectFeedback,
 } from "../apis/feedback/Feedback";
 import { getUserId } from "../utils/auth";
+import { BASE_URL } from "../constants/config";
+import { getAuthHeaders } from "../utils/auth";
 
 const ProjectDetailsScreen = ({ navigation, route }) => {
   const { project, fromAdmin } = route.params || {};
@@ -80,19 +83,25 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
         setFeedbackStats({ average: 0, count: 0 });
       }
 
-      // Get user's own feedback if logged in
-      try {
-        const userFeedbackResponse = await getUserProjectFeedback(
-          project.project_id
-        );
-        if (userFeedbackResponse?.success && userFeedbackResponse?.data) {
-          setUserFeedback(userFeedbackResponse.data);
-        } else {
+      // Get user's own feedback if logged in (skip for guests)
+      const isGuest = await AsyncStorage.getItem("isGuest");
+      if (isGuest !== "true") {
+        try {
+          const userFeedbackResponse = await getUserProjectFeedback(
+            project.project_id
+          );
+          if (userFeedbackResponse?.success && userFeedbackResponse?.data) {
+            setUserFeedback(userFeedbackResponse.data);
+          } else {
+            setUserFeedback(null);
+          }
+        } catch (error) {
+          // User not logged in or hasn't rated yet
+          console.log("No user feedback yet");
           setUserFeedback(null);
         }
-      } catch (error) {
-        // User not logged in or hasn't rated yet
-        console.log("No user feedback yet");
+      } else {
+        // Guest user - no personal feedback
         setUserFeedback(null);
       }
     } catch (error) {
@@ -137,6 +146,41 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
         "Error",
         error.response?.data?.message || error.message || "Failed to submit rating"
       );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteRating = async () => {
+    try {
+      setSubmitting(true);
+      
+      if (!userFeedback?.feedback_id) {
+        Alert.alert("Error", "Unable to delete rating at this time.");
+        return;
+      }
+
+      const response = await fetch(
+        `${BASE_URL}/feedback/${userFeedback.feedback_id}`,
+        {
+          method: "DELETE",
+          headers: await getAuthHeaders(),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        Alert.alert("Success", "Your rating has been deleted.");
+        setShowRatingModal(false);
+        setTimeout(() => {
+          loadFeedbackData();
+        }, 500);
+      } else {
+        Alert.alert("Error", result.message || "Failed to delete rating.");
+      }
+    } catch (error) {
+      console.error("Error deleting rating:", error);
+      Alert.alert("Error", "Failed to delete rating. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -276,7 +320,38 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
                   {!isOwner && (
                     <TouchableOpacity
                       style={styles.rateButton}
-                      onPress={() => setShowRatingModal(true)}
+                      onPress={async () => {
+                        // Check if user is a guest
+                        const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+                        const guestStatus = await AsyncStorage.getItem("isGuest");
+                        
+                        if (guestStatus === "true") {
+                          Alert.alert(
+                            "Login Required",
+                            "Please log in or create an account to rate this project.",
+                            [
+                              {
+                                text: "Cancel",
+                                style: "cancel"
+                              },
+                              {
+                                text: "Login",
+                                onPress: async () => {
+                                  await AsyncStorage.removeItem("isGuest");
+                                  await AsyncStorage.removeItem("userType");
+                                  navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: "Login" }],
+                                  });
+                                }
+                              }
+                            ]
+                          );
+                          return;
+                        }
+                        
+                        setShowRatingModal(true);
+                      }}
                     >
                       <Ionicons name="star-outline" size={20} color="#fff" />
                       <Text style={styles.rateButtonText}>
@@ -476,6 +551,7 @@ const ProjectDetailsScreen = ({ navigation, route }) => {
         visible={showRatingModal}
         onClose={() => setShowRatingModal(false)}
         onSubmit={handleRatingSubmit}
+        onDelete={userFeedback ? handleDeleteRating : null}
         initialRating={userFeedback?.rating}
         initialComment={userFeedback?.comment}
       />

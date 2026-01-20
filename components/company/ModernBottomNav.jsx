@@ -12,13 +12,25 @@ import { Colors } from "../../constants/constants";
 
 const ModernBottomNav = ({ activeTab, onTabChange }) => {
   // Animation values for each tab
+  const exploreAnim = useRef(new Animated.Value(activeTab === "explore" ? 1 : 0)).current;
+  const reelsAnim = useRef(new Animated.Value(activeTab === "reels" ? 1 : 0)).current;
   const profileAnim = useRef(new Animated.Value(activeTab === "profile" ? 1 : 0)).current;
   const offeringAnim = useRef(new Animated.Value(activeTab === "offering" ? 1 : 0)).current;
-  const projectsAnim = useRef(new Animated.Value(activeTab === "projects" ? 1 : 0)).current;
-  const companiesAnim = useRef(new Animated.Value(activeTab === "companies" ? 1 : 0)).current;
   const mapAnim = useRef(new Animated.Value(activeTab === "map" ? 1 : 0)).current;
 
   const tabs = [
+    {
+      key: "explore",
+      icon: "compass",
+      label: "Explore",
+      anim: exploreAnim,
+    },
+    {
+      key: "reels",
+      icon: "play-circle",
+      label: "Reels",
+      anim: reelsAnim,
+    },
     {
       key: "profile",
       icon: "person",
@@ -30,18 +42,6 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
       icon: "pricetag",
       label: "Offering",
       anim: offeringAnim,
-    },
-    {
-      key: "projects",
-      icon: "briefcase",
-      label: "Projects",
-      anim: projectsAnim,
-    },
-    {
-      key: "companies",
-      icon: "business",
-      label: "Companies",
-      anim: companiesAnim,
     },
     {
       key: "map",

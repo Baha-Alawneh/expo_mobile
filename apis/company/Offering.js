@@ -203,11 +203,11 @@ export const createOffering = async (userId, offeringData) => {
   }
 };
 
-export const updateOffering = async (userId, offeringData) => {
+export const updateOffering = async (userId, offeringId, offeringData) => {
   try {
     const headers = await getAuthHeaders();
     const response = await axios.put(
-      `${BASE_URL}/companies/offering/${userId}`,
+      `${BASE_URL}/companies/offering/${userId}/${offeringId}`,
       offeringData,
       { headers }
     );
@@ -245,11 +245,55 @@ export const updateOffering = async (userId, offeringData) => {
   }
 };
 
-export const uploadOfferingImages = async (userId, images, keepImageKeys = []) => {
+export const deleteOffering = async (userId, offeringId) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await axios.delete(
+      `${BASE_URL}/companies/offering/${userId}/${offeringId}`,
+      { headers }
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        message: response.data.message || "Offering deleted successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to delete offering",
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      if (error.response.status === 401) {
+        return {
+          success: false,
+          message: "Session expired. Please login again.",
+          unauthorized: true,
+        };
+      }
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};
+
+export const uploadOfferingImages = async (userId, offeringId, images, keepImageKeys = []) => {
   try {
     const token = await getAuthToken();
     if (!token) {
       throw new Error("No authentication token found. Please login again.");
+    }
+
+    if (!offeringId) {
+      throw new Error("Offering ID is required for image upload");
     }
 
     const formData = new FormData();
@@ -295,7 +339,7 @@ export const uploadOfferingImages = async (userId, images, keepImageKeys = []) =
       });
     });
 
-    const uploadUrl = `${BASE_URL}/companies/offering/${userId}/upload`;
+    const uploadUrl = `${BASE_URL}/companies/offering/${userId}/${offeringId}/upload`;
     console.log("Uploading to:", uploadUrl);
 
     const response = await fetch(uploadUrl, {

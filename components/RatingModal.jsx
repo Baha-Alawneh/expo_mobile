@@ -20,6 +20,7 @@ import StarRating from "./StarRating";
  * @param {boolean} visible - Whether modal is visible
  * @param {function} onClose - Callback when modal closes
  * @param {function} onSubmit - Callback when rating is submitted
+ * @param {function} onDelete - Callback when rating is deleted
  * @param {number} initialRating - Initial rating value
  * @param {string} initialComment - Initial comment value
  * @param {string} title - Modal title
@@ -29,6 +30,7 @@ const RatingModal = ({
   visible = false,
   onClose = () => {},
   onSubmit = () => {},
+  onDelete = null,
   initialRating = 0,
   initialComment = "",
   title = "Rate and Review",
@@ -126,6 +128,29 @@ const RatingModal = ({
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
+
+              {onDelete && (
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => {
+                    Alert.alert(
+                      "Delete Rating",
+                      "Are you sure you want to delete your rating?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: onDelete,
+                        },
+                      ]
+                    );
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={[
@@ -243,6 +268,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#666",
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: "#FF3B30",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   submitButton: {
     flex: 1,

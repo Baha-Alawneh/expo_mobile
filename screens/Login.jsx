@@ -171,18 +171,38 @@ const Login = () => {
                 <Text style={styles.signUpLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
-            {/* Divider */}
+            
+            {/* Guest Mode Button */}
+            <TouchableOpacity
+              style={styles.guestButton}
+              onPress={async () => {
+                // Set guest mode without authentication
+                const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+                await AsyncStorage.setItem("userType", "visitor");
+                await AsyncStorage.setItem("isGuest", "true");
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Visitor" }],
+                });
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="enter-outline" size={20} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.guestButtonText}>Continue as Guest</Text>
+            </TouchableOpacity>
+
+            {/* Divider
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>or continue with</Text>
               <View style={styles.dividerLine} />
             </View>
-            {/* Social Login */}
+            {/* Social Login 
             <View style={styles.socialContainer}>
               <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
                 <Ionicons name="logo-google" size={24} color={Colors.WHITE} />
               </TouchableOpacity>
-            </View>
+            </View> */}
           </View>
         </ScrollView>
       </LinearGradient>
@@ -348,6 +368,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginLeft: 6,
+  },
+
+  // Guest Button
+  guestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 20,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  guestButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginLeft: 10,
+    letterSpacing: 0.5,
   },
 
   // Divider

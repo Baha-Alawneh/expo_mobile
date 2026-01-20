@@ -53,6 +53,7 @@ export const storeAuthData = async (token, userId, role, name = null, email = nu
       ["token", token],
       ["userId", userId],
       ["role", role],
+      ["userType", role],
       ["loginTime", Date.now().toString()],
     ];
     
@@ -65,6 +66,9 @@ export const storeAuthData = async (token, userId, role, name = null, email = nu
     }
     
     await AsyncStorage.multiSet(dataToStore);
+    
+    // Remove guest flag if it exists (user is now authenticated)
+    await AsyncStorage.removeItem("isGuest");
   } catch (error) {
     console.error("Error storing auth data:", error);
     throw error;
@@ -76,7 +80,16 @@ export const storeAuthData = async (token, userId, role, name = null, email = nu
  */
 export const clearAuthData = async () => {
   try {
-    await AsyncStorage.multiRemove(["token", "userId", "role", "loginTime"]);
+    await AsyncStorage.multiRemove([
+      "token",
+      "userId",
+      "role",
+      "loginTime",
+      "userName",
+      "userEmail",
+      "isGuest",
+      "userType"
+    ]);
   } catch (error) {
     console.error("Error clearing auth data:", error);
     throw error;
@@ -102,9 +115,20 @@ export const isTokenValid = async () => {
 
 /**
  * Get authorization headers for API requests
- * @returns {Promise<Object>} Headers object with Authorization
+ * @returns {Promise<Object>} Headers object with Authorization or guest header
  */
 export const getAuthHeaders = async () => {
+  // Check if user is in guest mode
+  const isGuest = await AsyncStorage.getItem("isGuest");
+  
+  if (isGuest === "true") {
+    // Guest mode - send x-guest header instead of token
+    return {
+      "x-guest": "true",
+      "Content-Type": "application/json",
+    };
+  }
+
   const token = await getAuthToken();
   if (!token) {
     throw new Error("No authentication token found");

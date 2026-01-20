@@ -18,9 +18,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "../constants/constants";
 import * as ImagePicker from "expo-image-picker";
-import OtherProjectsScreen from "./OtherProjectsScreen";
-import CompaniesScreen from "./CompaniesScreen";
+import ExploreScreen from "./ExploreScreen";
 import MapScreenNew from "./MapScreenNew";
+import ReelsScreen from "./ReelsScreen";
 import ModernOfferingContent from "../components/company/ModernOfferingContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuthData } from "../utils/auth";
@@ -46,7 +46,7 @@ import ModernSidebar from "../components/company/ModernSidebar";
 
 const Company = ({ navigation }) => {
   // States
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("explore");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showNotificationDetails, setShowNotificationDetails] = useState(false);
@@ -654,11 +654,11 @@ const Company = ({ navigation }) => {
               />
             </>
           )}
-          {activeTab === "projects" && (
-            <OtherProjectsScreen navigation={navigation} />
+          {activeTab === "explore" && (
+            <ExploreScreen navigation={navigation} />
           )}
-          {activeTab === "companies" && (
-            <CompaniesScreen navigation={navigation} />
+          {activeTab === "reels" && (
+            <ReelsScreen navigation={navigation} route={{ params: { userRole: "company", fromNavBar: true } }} />
           )}
           {activeTab === "map" && (
             <MapScreenNew
@@ -935,8 +935,8 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 10 : 50,
     paddingBottom: 25,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    // borderBottomLeftRadius: 30,
+    // borderBottomRightRadius: 30,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,

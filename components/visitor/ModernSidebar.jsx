@@ -21,6 +21,8 @@ const ModernSidebar = ({
   onClose,
   chatUnreadCount,
   onNavigate,
+  isGuest = true,
+  visitorData = { name: "Visitor", email: "" },
 }) => {
   const slideAnim = useRef(new Animated.Value(width)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
@@ -63,20 +65,6 @@ const ModernSidebar = ({
       route: "ChatbotScreen",
       color: "#6366f1",
       gradient: ["#6366f1", "#8b5cf6"],
-    },
-    {
-      icon: "play-circle",
-      label: "Reels",
-      route: "ReelsScreen",
-      color: "#ec4899",
-      gradient: ["#ec4899", "#f43f5e"],
-    },
-    {
-      icon: "map",
-      label: "Event Map",
-      route: "map",
-      color: "#10b981",
-      gradient: ["#10b981", "#059669"],
     },
   ];
 
@@ -136,8 +124,12 @@ const ModernSidebar = ({
               <View style={styles.guestIconContainer}>
                 <Ionicons name="eye-outline" size={50} color={Colors.mainColor} />
               </View>
-              <Text style={styles.profileName}>Visitor</Text>
-              <Text style={styles.profileEmail}>Guest User</Text>
+              <Text style={styles.profileName}>
+                {isGuest ? "Visitor" : visitorData.name}
+              </Text>
+              <Text style={styles.profileEmail}>
+                {isGuest ? "Guest User" : visitorData.email}
+              </Text>
             </View>
           </LinearGradient>
 
@@ -183,21 +175,23 @@ const ModernSidebar = ({
               </TouchableOpacity>
             ))}
 
-            {/* Info Section */}
-            <View style={styles.infoSection}>
-              <View style={styles.infoCard}>
-                <Ionicons name="information-circle" size={24} color={Colors.mainColor} />
-                <Text style={styles.infoText}>
-                  You're browsing as a guest. Some features may be limited.
-                </Text>
+            {/* Info Section - Only show for guests */}
+            {isGuest && (
+              <View style={styles.infoSection}>
+                <View style={styles.infoCard}>
+                  <Ionicons name="information-circle" size={24} color={Colors.mainColor} />
+                  <Text style={styles.infoText}>
+                    You're browsing as a guest. Some features may be limited.
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
           </ScrollView>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Visitor Mode</Text>
-            <Text style={styles.footerVersion}>Expo Project App</Text>
+            <Text style={styles.footerText}>Version 1.0.0</Text>
+            <Text style={styles.footerVersion}>TEDI-Najah Expo</Text>
           </View>
         </Animated.View>
       </View>

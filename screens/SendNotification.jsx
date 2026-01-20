@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { sendNotification, getAllUsers } from "../apis/admin/Admin";
@@ -45,6 +47,7 @@ const SendNotification = ({ navigation, onBack }) => {
   const [users, setUsers] = useState([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -53,13 +56,15 @@ const SendNotification = ({ navigation, onBack }) => {
   const fetchUsers = async () => {
     const response = await getAllUsers();
     if (response.success) {
-      setUsers(response.data);
-      setFilteredUsers(response.data);
+      // Filter out admin users
+      const nonAdminUsers = response.data.filter(user => user.role !== 'admin');
+      setUsers(nonAdminUsers);
+      setFilteredUsers(nonAdminUsers);
     }
   };
 
-  const filterUsers = (text) => {
-    setTargetEmail(text);
+  const filterUsers = useCallback((text) => {
+    setSearchQuery(text);
     if (text === "") {
       setFilteredUsers(users);
     } else {
@@ -70,7 +75,7 @@ const SendNotification = ({ navigation, onBack }) => {
       );
       setFilteredUsers(filtered);
     }
-  };
+  }, [users]);
 
   const handleSendNotification = async () => {
     // Validation
@@ -164,57 +169,86 @@ const SendNotification = ({ navigation, onBack }) => {
     </Modal>
   );
 
-  const UserPicker = () => (
+  const UserPickerModal = useMemo(() => (
     <Modal
       visible={showUserPicker}
       transparent
-      animationType="slide"
-      onRequestClose={() => setShowUserPicker(false)}
+      animationType="none"
+      onRequestClose={() => {
+        setShowUserPicker(false);
+        setSearchQuery("");
+        setFilteredUsers(users);
+      }}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.userPickerContent}>
-          <View style={styles.userPickerHeader}>
-            <Text style={styles.modalTitle}>Select User</Text>
-            <TouchableOpacity onPress={() => setShowUserPicker(false)}>
-              <Ionicons name="close" size={24} color="#2D3436" />
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name or email"
-            value={targetEmail}
-            onChangeText={filterUsers}
-            autoCapitalize="none"
-          />
-          <FlatList
-            data={filteredUsers}
-            keyExtractor={(item) => item.user_id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.userItem}
-                onPress={() => {
-                  setTargetEmail(item.email);
-                  setShowUserPicker(false);
-                }}
-              >
-                <View style={styles.userAvatar}>
-                  <Ionicons name="person" size={20} color="#6C5CE7" />
-                </View>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{item.name}</Text>
-                  <Text style={styles.userEmail}>{item.email}</Text>
-                  <Text style={styles.userRole}>{item.role}</Text>
-                </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1}
+          onPress={() => {
+            setShowUserPicker(false);
+            setSearchQuery("");
+            setFilteredUsers(users);
+          }}
+        >
+          <View 
+            style={styles.userPickerContent}
+            onStartShouldSetResponder={() => true}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <View style={styles.userPickerHeader}>
+              <Text style={styles.modalTitle}>Select User</Text>
+              <TouchableOpacity onPress={() => {
+                setShowUserPicker(false);
+                setSearchQuery("");
+                setFilteredUsers(users);
+              }}>
+                <Ionicons name="close" size={24} color="#2D3436" />
               </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No users found</Text>
-            }
-          />
-        </View>
-      </View>
+            </View>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name or email"
+              value={searchQuery}
+              onChangeText={filterUsers}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <FlatList
+              data={filteredUsers}
+              keyExtractor={(item) => item.user_id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.userItem}
+                  onPress={() => {
+                    setTargetEmail(item.email);
+                    setShowUserPicker(false);
+                    setSearchQuery("");
+                    setFilteredUsers(users);
+                  }}
+                >
+                  <View style={styles.userAvatar}>
+                    <Ionicons name="person" size={20} color="#6C5CE7" />
+                  </View>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{item.name}</Text>
+                    <Text style={styles.userEmail}>{item.email}</Text>
+                    <Text style={styles.userRole}>{item.role}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No users found</Text>
+              }
+              keyboardShouldPersistTaps="handled"
+            />
+          </View>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
-  );
+  ), [showUserPicker, searchQuery, filteredUsers, filterUsers, users]);
 
   return (
     <View style={styles.container}>
@@ -315,14 +349,14 @@ const SendNotification = ({ navigation, onBack }) => {
             <TouchableOpacity
               style={styles.emailSelector}
               onPress={() => setShowUserPicker(true)}
+              activeOpacity={0.7}
             >
               <TextInput
                 style={styles.emailInput}
                 placeholder="Select or enter user email"
                 value={targetEmail}
-                onChangeText={setTargetEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
+                editable={false}
+                pointerEvents="none"
               />
               <Ionicons name="search" size={20} color="#636E72" />
             </TouchableOpacity>
@@ -370,7 +404,7 @@ const SendNotification = ({ navigation, onBack }) => {
       </ScrollView>
 
       <IconPicker />
-      <UserPicker />
+      {UserPickerModal}
     </View>
   );
 };

@@ -2,7 +2,7 @@ import axios from "axios";
 import { SERVER_IP_HOME_AYMAN, SERVER_PORT } from "../constants/config";
 
 // Chatbot API URL - adjust this based on your chatbot API server
-const CHATBOT_API_URL = `http://${SERVER_IP_HOME_AYMAN}:3001/api/chatbot`;
+const CHATBOT_API_URL = `http://${SERVER_IP_HOME_AYMAN}:3001/api/chat`;
 
 /**
  * Send a message to the chatbot and get a response
@@ -14,8 +14,7 @@ export const sendMessageToChatbot = async (question) => {
     const response = await axios.post(
       `${CHATBOT_API_URL}/chat`,
       {
-        question: question,
-        useOpenAI: true,
+        message: question,
       },
       {
         timeout: 30000, // 30 second timeout
@@ -28,21 +27,21 @@ export const sendMessageToChatbot = async (question) => {
     if (response.data && response.data.success) {
       return {
         success: true,
-        answer: response.data.answer,
-        analysis: response.data.analysis,
-        metadata: response.data.metadata,
+        answer: response.data.message || response.data.answer,
+        source: response.data.source,
+        data: response.data.data,
       };
     } else {
       return {
         success: false,
-        error: response.data?.message || "Unknown error occurred",
+        error: response.data?.message || response.data?.error || "Unknown error occurred",
       };
     }
   } catch (error) {
     console.error("Error communicating with chatbot:", error);
     return {
       success: false,
-      error: error.message || "Failed to connect to chatbot service",
+      error: error.response?.data?.message || error.message || "Failed to connect to chatbot service",
     };
   }
 };

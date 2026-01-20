@@ -1,6 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/config";
+import { getAuthHeaders } from "../../utils/auth";
 
 // Get all feedback for a project
 export const getProjectFeedback = async (projectId) => {
@@ -34,12 +35,10 @@ export const getOfferingFeedback = async (offeringId) => {
 // Get current user's feedback for a project
 export const getUserProjectFeedback = async (projectId) => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const headers = await getAuthHeaders();
     const response = await axios.get(
       `${API_URL}/feedback/user/project/${projectId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { headers }
     );
     return response.data;
   } catch (error) {
@@ -51,12 +50,10 @@ export const getUserProjectFeedback = async (projectId) => {
 // Get current user's feedback for an offering
 export const getUserOfferingFeedback = async (offeringId) => {
   try {
-    const token = await AsyncStorage.getItem("token");
+    const headers = await getAuthHeaders();
     const response = await axios.get(
       `${API_URL}/feedback/user/offering/${offeringId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { headers }
     );
     return response.data;
   } catch (error) {

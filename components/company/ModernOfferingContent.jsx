@@ -21,14 +21,18 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   getOffering,
+  getOfferingsByCompanyId,
   createOffering,
   updateOffering,
   uploadOfferingImages,
+  deleteOffering,
 } from "../../apis/company/Offering";
 import { getOfferingFeedback } from "../../apis/feedback/Feedback";
+import { getCompanyData } from "../../apis/company/Company";
 
 const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
-  const [myOffering, setMyOffering] = useState(null);
+  const [myOfferings, setMyOfferings] = useState([]);
+  const [companyId, setCompanyId] = useState(null);
   const [showAddOffering, setShowAddOffering] = useState(false);
   const [editingOffering, setEditingOffering] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -72,59 +76,62 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
         return;
       }
 
-      const result = await getOffering(userId);
-      console.log("Fetch offering result:", result);
+      // First get company_id
+      const companyResult = await getCompanyData(userId);
+      if (!companyResult.success || !companyResult.data?.company_id) {
+        setError("Failed to load company data");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      const compId = companyResult.data.company_id;
+      setCompanyId(compId);
+
+      // Fetch ALL offerings for this company
+      const result = await getOfferingsByCompanyId(compId);
+      console.log("Fetch offerings result:", result);
       
       if (result.success && result.data) {
-        console.log("Offering data from backend:", result.data);
+        console.log("Offerings data from backend:", result.data);
         
-        // Backend returns an array of offerings, get the first one
-        const offeringFromBackend = Array.isArray(result.data) ? result.data[0] : result.data;
+        // Backend returns an array of offerings
+        const offeringsArray = Array.isArray(result.data) ? result.data : [result.data];
         
-        if (!offeringFromBackend) {
-          setMyOffering(null);
-          setLoading(false);
-          setRefreshing(false);
-          return;
-        }
-        
-        console.log("offering_photos from backend:", offeringFromBackend.offering_photos);
-        
-        const photos =
-          offeringFromBackend.offering_photos &&
-          Array.isArray(offeringFromBackend.offering_photos) &&
-          offeringFromBackend.offering_photos.length > 0
-            ? offeringFromBackend.offering_photos
-            : offeringFromBackend.images && Array.isArray(offeringFromBackend.images)
-            ? offeringFromBackend.images
-            : [];
+        const processedOfferings = offeringsArray.map(offeringFromBackend => {
+          const photos =
+            offeringFromBackend.offering_photos &&
+            Array.isArray(offeringFromBackend.offering_photos) &&
+            offeringFromBackend.offering_photos.length > 0
+              ? offeringFromBackend.offering_photos
+              : offeringFromBackend.images && Array.isArray(offeringFromBackend.images)
+              ? offeringFromBackend.images
+              : [];
 
-        console.log("Processed photos:", photos);
+          return {
+            name: offeringFromBackend.name || "",
+            description: offeringFromBackend.description || "",
+            price: offeringFromBackend.price || "",
+            offering_photos: photos,
+            offering_id: offeringFromBackend.offering_id || null,
+            company_id: offeringFromBackend.company_id || null,
+            type: offeringFromBackend.type || "",
+          };
+        });
 
-        const offeringData = {
-          name: offeringFromBackend.name || "",
-          description: offeringFromBackend.description || "",
-          price: offeringFromBackend.price || "",
-          offering_photos: photos,
-          offering_id: offeringFromBackend.offering_id || null,
-          company_id: offeringFromBackend.company_id || null,
-          status: offeringFromBackend.status || "pending",
-          type: offeringFromBackend.type || "",
-        };
-
-        console.log("Setting myOffering to:", offeringData);
-        setMyOffering(offeringData);
+        console.log("Setting myOfferings to:", processedOfferings);
+        setMyOfferings(processedOfferings);
       } else {
         if (result.notFound) {
-          setMyOffering(null);
+          setMyOfferings([]);
         } else {
-          setError(result.message || "Failed to fetch offering");
+          setError(result.message || "Failed to fetch offerings");
         }
       }
     } catch (error) {
-      console.error("Error fetching offering:", error);
+      console.error("Error fetching offerings:", error);
       setError("An unexpected error occurred");
-      setMyOffering(null);
+      setMyOfferings([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -154,7 +161,14 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
       offering_photos: [],
       type: "",
     });
-    setShowTypeSelection(true);
+    
+    // Only show type selection for the first offering
+    if (myOfferings.length === 0) {
+      setShowTypeSelection(true);
+    } else {
+      // Skip type selection for additional offerings
+      setShowAddOffering(true);
+    }
   };
 
   const handleTypeSelection = (type) => {
@@ -164,12 +178,12 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
     setShowAddOffering(true);
   };
 
-  const handleEditOffering = () => {
-    if (myOffering) {
+  const handleEditOffering = (offering) => {
+    if (offering) {
       // Map offering_photos to objects with uri property
       const preparedPhotos =
-        myOffering.offering_photos && Array.isArray(myOffering.offering_photos)
-          ? myOffering.offering_photos.map((photo, index) => {
+        offering.offering_photos && Array.isArray(offering.offering_photos)
+          ? offering.offering_photos.map((photo, index) => {
               // Handle both string URLs and objects with uri property
               const photoUrl = typeof photo === "string" ? photo : photo?.uri;
 
@@ -181,17 +195,56 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
             })
           : [];
 
-      setEditingOffering(true);
-      setOfferingType(myOffering.type || "");
+      setEditingOffering(offering.offering_id);
+      setOfferingType(offering.type || "");
       setOfferingData({
-        name: myOffering.name || "",
-        description: myOffering.description || "",
-        price: myOffering.price || "",
+        name: offering.name || "",
+        description: offering.description || "",
+        price: offering.price || "",
         offering_photos: preparedPhotos,
-        type: myOffering.type || "",
+        type: offering.type || "",
+        offering_id: offering.offering_id,
       });
       setShowAddOffering(true);
     }
+  };
+
+  const handleDeleteOffering = async (offering) => {
+    Alert.alert(
+      "Delete Offering",
+      `Are you sure you want to delete "${offering.name}"? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const userId = await AsyncStorage.getItem("userId");
+              if (!userId) {
+                Alert.alert("Error", "Please login again");
+                return;
+              }
+
+              const result = await deleteOffering(userId, offering.offering_id);
+
+              if (result.success) {
+                Alert.alert("Success", "Offering deleted successfully");
+                await fetchMyOffering();
+              } else {
+                Alert.alert("Error", result.message || "Failed to delete offering");
+              }
+            } catch (error) {
+              console.error("Delete offering error:", error);
+              Alert.alert("Error", error.message || "An unexpected error occurred");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const pickOfferingImage = async () => {
@@ -281,8 +334,8 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
       }
 
       let result;
-      if (editingOffering && myOffering) {
-        result = await updateOffering(userId, offeringPayload);
+      if (editingOffering) {
+        result = await updateOffering(userId, editingOffering, offeringPayload);
       } else {
         result = await createOffering(userId, offeringPayload);
       }
@@ -301,18 +354,22 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
           console.log("Old images to keep (S3 keys):", oldImagesToKeep);
           console.log("New images to upload:", newImagesToUpload.length);
           
+          // Find the edited offering from the array
+          const editedOffering = myOfferings.find(o => o.offering_id === editingOffering);
           // Always upload if there are changes (new images or removed images)
           const hasImageChanges = newImagesToUpload.length > 0 || 
-                                  (myOffering.offering_photos && 
-                                   oldImages.length !== myOffering.offering_photos.length);
+                                  (editedOffering?.offering_photos && 
+                                   oldImages.length !== editedOffering.offering_photos.length);
           
           if (hasImageChanges || newImagesToUpload.length > 0 || oldImagesToKeep.length > 0) {
             try {
-              if (newImagesToUpload.length > 0 || oldImagesToKeep.length < (myOffering.offering_photos?.length || 0)) {
+              const editedOffering = myOfferings.find(o => o.offering_id === editingOffering);
+              if (newImagesToUpload.length > 0 || oldImagesToKeep.length < (editedOffering?.offering_photos?.length || 0)) {
                 Alert.alert("Uploading", "Updating offering images...");
 
                 const uploadResult = await uploadOfferingImages(
                   userId,
+                  editingOffering,
                   newImagesToUpload,
                   oldImagesToKeep
                 );
@@ -340,12 +397,13 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
           }
         } else {
           // Creating new offering
-          if (newImagesToUpload.length > 0) {
+          if (newImagesToUpload.length > 0 && result.data?.offering_id) {
             try {
               Alert.alert("Uploading", "Uploading offering images...");
 
               const uploadResult = await uploadOfferingImages(
                 userId,
+                result.data.offering_id,
                 newImagesToUpload,
                 []
               );
@@ -370,11 +428,6 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
           }
         }
 
-        // Safely set offering data
-        if (result.data) {
-          setMyOffering(result.data);
-        }
-        
         setOfferingData({
           name: "",
           description: "",
@@ -396,12 +449,12 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
   };
 
   const loadFeedbackData = async () => {
-    if (!myOffering?.offering_id) {
+    if (!myOfferings || myOfferings.length === 0 || !myOfferings[0]?.offering_id) {
       return;
     }
 
     try {
-      const feedbackResponse = await getOfferingFeedback(myOffering.offering_id);
+      const feedbackResponse = await getOfferingFeedback(myOfferings[0].offering_id);
 
       if (feedbackResponse.success) {
         const allFeedbackData = feedbackResponse.data.feedback || [];
@@ -428,10 +481,10 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
   }, []);
 
   useEffect(() => {
-    if (myOffering?.offering_id) {
+    if (myOfferings && myOfferings.length > 0 && myOfferings[0]?.offering_id) {
       loadFeedbackData();
     }
-  }, [myOffering?.offering_id]);
+  }, [myOfferings]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -497,98 +550,25 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
       >
         {error ? (
           renderErrorState()
-        ) : myOffering ? (
-          <View style={styles.offeringCard}>
-            {/* Header with Edit Button */}
-            <View style={styles.cardHeader}>
-              <View style={styles.titleRow}>
-                <View style={styles.iconTitleContainer}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="pricetag" size={24} color="#1b2e4f" />
-                  </View>
-                  <Text style={styles.offeringName}>{myOffering.name}</Text>
+        ) : myOfferings && myOfferings.length > 0 ? (
+          <View>
+            {/* Ratings & Reviews Card - First at the top */}
+            <View style={styles.ratingCard}>
+              <View style={styles.cardHeader}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="star" size={24} color="#FFD700" />
+                  <Text style={styles.cardTitle}>Ratings & Reviews</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={handleEditOffering}
-                >
-                  <Ionicons name="create-outline" size={20} color="#1b2e4f" />
-                </TouchableOpacity>
               </View>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            {/* Price Section */}
-            {myOffering.price && (
-              <>
-                <View style={styles.priceSection}>
-                  <Ionicons name="cash-outline" size={20} color="#1b2e4f" />
-                  <Text style={styles.priceLabel}>Price:</Text>
-                  <Text style={styles.priceValue}>{myOffering.price}</Text>
-                </View>
-                <View style={styles.divider} />
-              </>
-            )}
-
-            {/* Description Section */}
-            {myOffering.description && (
-              <>
-                <View style={styles.descriptionSection}>
-                  <View style={styles.sectionHeader}>
-                    <Ionicons name="document-text-outline" size={20} color="#1b2e4f" />
-                    <Text style={styles.sectionTitle}>Description</Text>
-                  </View>
-                  <Text style={styles.descriptionText}>{myOffering.description}</Text>
-                </View>
-                <View style={styles.divider} />
-              </>
-            )}
-
-            {/* Images Section */}
-            {myOffering.offering_photos && myOffering.offering_photos.length > 0 && (
-              <>
-                <View style={styles.imagesSection}>
-                  <View style={styles.sectionHeader}>
-                    <Ionicons name="images-outline" size={20} color="#1b2e4f" />
-                    <Text style={styles.sectionTitle}>Photos</Text>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.imagesScroll}
-                  >
-                    {myOffering.offering_photos
-                      .filter((photo) => photo && (typeof photo === 'string' || photo.uri))
-                      .map((photo, index) => {
-                        const imageUri = typeof photo === 'string' ? photo : photo.uri;
-                        return (
-                          <Image
-                            key={index}
-                            source={{ uri: imageUri }}
-                            style={styles.offeringImage}
-                          />
-                        );
-                      })}
-                  </ScrollView>
-                </View>
-                <View style={styles.divider} />
-              </>
-            )}
-
-            {/* Rating Section */}
-            <View style={styles.ratingSection}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="star" size={20} color="#FFD700" />
-                <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
-              </View>
+              
+              <View style={styles.divider} />
+              
               <View style={styles.ratingOverview}>
                 <View style={styles.ratingValueContainer}>
                   <Text style={styles.ratingValue}>
                     {feedbackStats.average.toFixed(1)}
                   </Text>
-                  <StarRating rating={feedbackStats.average} size={20} />
+                  <StarRating rating={feedbackStats.average} size={24} />
                   <Text style={styles.ratingCount}>
                     ({feedbackStats.count} {feedbackStats.count === 1 ? "rating" : "ratings"})
                   </Text>
@@ -604,29 +584,143 @@ const ModernOfferingContent = ({ navigation, companyStatus = "pending" }) => {
                 <Text style={styles.noFeedbackText}>No reviews yet</Text>
               )}
             </View>
+
+            {/* Add Another Offering Button - Below Ratings & Reviews */}
+            {companyStatus === 'approved' && (
+              <View style={styles.addAnotherContainer}>
+                <TouchableOpacity
+                  style={styles.addAnotherButton}
+                  onPress={handleAddOffering}
+                >
+                  <LinearGradient
+                    colors={["#1b2e4f", "#2a4575"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.addAnotherGradient}
+                  >
+                    <Ionicons name="add-circle-outline" size={24} color="#fff" />
+                    <Text style={styles.addAnotherText}>Add Another Offering</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* All Offerings List */}
+            <View style={styles.offeringsHeader}>
+              <Ionicons name="pricetags" size={24} color="#1b2e4f" />
+              <Text style={styles.offeringsHeaderText}>
+                My Offerings ({myOfferings.length})
+              </Text>
+            </View>
+
+            {myOfferings.map((offering, index) => (
+              <View key={offering.offering_id || index} style={styles.offeringCard}>
+                {/* Header with Edit and Delete Buttons */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.titleRow}>
+                    <View style={styles.iconTitleContainer}>
+                      <View style={styles.iconCircle}>
+                        <Ionicons name="pricetag" size={24} color="#1b2e4f" />
+                      </View>
+                      <Text style={styles.offeringName}>{offering.name}</Text>
+                    </View>
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleEditOffering(offering)}
+                      >
+                        <Ionicons name="create-outline" size={20} color="#1b2e4f" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteOffering(offering)}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#FF5252" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Divider */}
+                <View style={styles.divider} />
+
+                {/* Type Badge */}
+                {offering.type && (
+                  <>
+                    <View style={styles.typeSection}>
+                      <View style={styles.typeBadge}>
+                        <Ionicons 
+                          name={offering.type === 'sponser' ? 'gift' : 'briefcase'} 
+                          size={16} 
+                          color="#1b2e4f" 
+                        />
+                        <Text style={styles.typeText}>
+                          {offering.type === 'sponser' ? 'Sponsorship' : 'Service'}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.divider} />
+                  </>
+                )}
+
+                {/* Price Section */}
+                {offering.price && (
+                  <>
+                    <View style={styles.priceSection}>
+                      <Ionicons name="cash-outline" size={20} color="#1b2e4f" />
+                      <Text style={styles.priceLabel}>Price:</Text>
+                      <Text style={styles.priceValue}>{offering.price}</Text>
+                    </View>
+                    <View style={styles.divider} />
+                  </>
+                )}
+
+                {/* Description Section */}
+                {offering.description && (
+                  <>
+                    <View style={styles.descriptionSection}>
+                      <View style={styles.sectionHeader}>
+                        <Ionicons name="document-text-outline" size={20} color="#1b2e4f" />
+                        <Text style={styles.sectionTitle}>Description</Text>
+                      </View>
+                      <Text style={styles.descriptionText}>{offering.description}</Text>
+                    </View>
+                    <View style={styles.divider} />
+                  </>
+                )}
+
+                {/* Images Section */}
+                {offering.offering_photos && offering.offering_photos.length > 0 && (
+                  <View style={styles.imagesSection}>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="images-outline" size={20} color="#1b2e4f" />
+                      <Text style={styles.sectionTitle}>Photos ({offering.offering_photos.length})</Text>
+                    </View>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.imagesScroll}
+                    >
+                      {offering.offering_photos
+                        .filter((photo) => photo && (typeof photo === 'string' || photo.uri))
+                        .map((photo, photoIndex) => {
+                          const imageUri = typeof photo === 'string' ? photo : photo.uri;
+                          return (
+                            <Image
+                              key={photoIndex}
+                              source={{ uri: imageUri }}
+                              style={styles.offeringImage}
+                            />
+                          );
+                        })}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+            ))}
           </View>
         ) : (
           renderEmptyState()
-        )}
-        
-        {/* Add Another Offering Button - shown when offering exists and company is approved */}
-        {myOffering && companyStatus === 'approved' && (
-          <View style={styles.addAnotherContainer}>
-            <TouchableOpacity
-              style={styles.addAnotherButton}
-              onPress={handleAddOffering}
-            >
-              <LinearGradient
-                colors={["#1b2e4f", "#2a4575"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.addAnotherGradient}
-              >
-                <Ionicons name="add-circle-outline" size={24} color="#fff" />
-                <Text style={styles.addAnotherText}>Add Another Offering</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
         )}
       </ScrollView>
 
@@ -933,11 +1027,23 @@ const styles = StyleSheet.create({
     color: "#1b2e4f",
     flex: 1,
   },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
   editButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: "#f0f4ff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#ffebee",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1005,6 +1111,53 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 12,
     backgroundColor: "#f0f4ff",
+  },
+  ratingCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1b2e4f",
+    marginLeft: 8,
+  },
+  offeringsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  offeringsHeaderText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1b2e4f",
+  },
+  typeSection: {
+    paddingVertical: 8,
+  },
+  typeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#f0f4ff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  typeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1b2e4f",
   },
   ratingSection: {
     gap: 12,

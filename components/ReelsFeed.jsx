@@ -16,9 +16,11 @@ import { Colors } from "../constants/constants";
 import Slider from "@react-native-community/slider";
 
 const { height, width } = Dimensions.get("window");
-const REEL_HEIGHT = height - 100;
 
-const ReelsFeed = ({ reels, refreshing, onRefresh, navigation }) => {
+const ReelsFeed = ({ reels, refreshing, onRefresh, navigation, containerHeight }) => {
+  // Calculate reel height - subtract space for Navigation Bar (approximately 90px)
+  const REEL_HEIGHT = containerHeight || (height - 90);
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState({});
   const [playbackStatus, setPlaybackStatus] = useState({});
@@ -118,7 +120,7 @@ const ReelsFeed = ({ reels, refreshing, onRefresh, navigation }) => {
     }
 
     return (
-      <View style={styles.reelContainer}>
+      <View style={[styles.reelContainer, { height: REEL_HEIGHT }]}>
         <TouchableWithoutFeedback onPress={() => togglePlayPause(index)}>
           <View style={styles.videoWrapper}>
             <Video
@@ -142,26 +144,26 @@ const ReelsFeed = ({ reels, refreshing, onRefresh, navigation }) => {
           </View>
         </TouchableWithoutFeedback>
 
-        {isCurrentVideo && duration > 1 && (
-          <View style={styles.progressContainer}>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={duration}
-              value={position}
-              onSlidingComplete={(value) => handleSeek(index, value)}
-              minimumTrackTintColor={Colors.mainColor}
-              maximumTrackTintColor="rgba(255,255,255,0.3)"
-              thumbTintColor={Colors.mainColor}
-            />
-            <View style={styles.timeContainer}>
-              <Text style={styles.timeText}>{formatTime(position)}</Text>
-              <Text style={styles.timeText}>{formatTime(duration)}</Text>
-            </View>
-          </View>
-        )}
-
         <View style={styles.overlay}>
+          {isCurrentVideo && duration > 1 && (
+            <View style={styles.progressContainer}>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={duration}
+                value={position}
+                onSlidingComplete={(value) => handleSeek(index, value)}
+                minimumTrackTintColor={Colors.mainColor}
+                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                thumbTintColor={Colors.mainColor}
+              />
+              <View style={styles.timeContainer}>
+                <Text style={styles.timeText}>{formatTime(position)}</Text>
+                <Text style={styles.timeText}>{formatTime(duration)}</Text>
+              </View>
+            </View>
+          )}
+
           <View style={styles.bottomInfo}>
             <View style={styles.userInfo}>
               <View style={styles.userAvatar}>
@@ -227,42 +229,45 @@ const ReelsFeed = ({ reels, refreshing, onRefresh, navigation }) => {
   }
 
   return (
-    <FlatList
-      ref={flatListRef}
-      data={reels}
-      renderItem={renderReelItem}
-      keyExtractor={keyExtractor}
-      pagingEnabled
-      showsVerticalScrollIndicator={false}
-      snapToInterval={REEL_HEIGHT}
-      snapToAlignment="start"
-      decelerationRate="fast"
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={viewabilityConfig}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      getItemLayout={(data, index) => ({
-        length: REEL_HEIGHT,
-        offset: REEL_HEIGHT * index,
-        index,
-      })}
-      windowSize={5}
-      maxToRenderPerBatch={2}
-      initialNumToRender={1}
-      removeClippedSubviews={false}
-    />
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <FlatList
+        ref={flatListRef}
+        data={reels}
+        renderItem={renderReelItem}
+        keyExtractor={keyExtractor}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        snapToInterval={REEL_HEIGHT}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        getItemLayout={(data, index) => ({
+          length: REEL_HEIGHT,
+          offset: REEL_HEIGHT * index,
+          index,
+        })}
+        windowSize={5}
+        maxToRenderPerBatch={2}
+        initialNumToRender={1}
+        removeClippedSubviews={false}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   reelContainer: {
-    height: REEL_HEIGHT,
     width: width,
     backgroundColor: "#000",
   },
   videoWrapper: {
     width: "100%",
     height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   video: {
     width: "100%",
@@ -275,11 +280,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   progressContainer: {
-    position: "absolute",
-    top: 10,
-    left: 0,
-    right: 0,
     paddingHorizontal: 10,
+    paddingTop: 12,
+    marginTop: 10,
   },
   slider: {
     width: "100%",
@@ -306,7 +309,10 @@ const styles = StyleSheet.create({
   },
   bottomInfo: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
+    backgroundColor: 'transparent',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   userInfo: {
     flexDirection: "row",
@@ -334,39 +340,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "bold",
     color: "#fff",
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   userRole: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#fff",
-    opacity: 0.9,
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    opacity: 0.95,
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 4,
   },
   descriptionContainer: {
     marginBottom: 8,
   },
   description: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: "500",
     color: "#fff",
-    lineHeight: 20,
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    lineHeight: 22,
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   timestamp: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: "600",
     color: "#fff",
-    opacity: 0.8,
-    textShadowColor: "rgba(0, 0, 0, 0.75)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    opacity: 0.9,
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   emptyContainer: {
     flex: 1,

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
@@ -33,6 +34,7 @@ const ChatListScreen = ({ navigation }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [displayList, setDisplayList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     initializeUser();
@@ -55,7 +57,7 @@ const ChatListScreen = ({ navigation }) => {
 
   useEffect(() => {
     updateDisplayList();
-  }, [chats, allUsers, selectedFilter]);
+  }, [chats, allUsers, selectedFilter, searchQuery]);
 
   const initializeUser = async () => {
     try {
@@ -168,7 +170,16 @@ const ChatListScreen = ({ navigation }) => {
       }))
     );
 
-    setDisplayList(items);
+    // Apply search filter if search query exists
+    let finalItems = items;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      finalItems = items.filter((item) =>
+        item.otherUser.name.toLowerCase().includes(query)
+      );
+    }
+
+    setDisplayList(finalItems);
   };
 
   const handleItemPress = async (item) => {
@@ -308,6 +319,34 @@ const ChatListScreen = ({ navigation }) => {
           {renderFilterTab("company", "Companies", "business")}
         </View>
 
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={20}
+            color="#999"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              style={styles.clearButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close-circle" size={20} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* User/Chat List */}
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -317,9 +356,13 @@ const ChatListScreen = ({ navigation }) => {
         ) : displayList.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={80} color="#E0E0E0" />
-            <Text style={styles.emptyText}>No users found</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim() ? "No results found" : "No users found"}
+            </Text>
             <Text style={styles.emptySubtext}>
-              {selectedFilter === "all"
+              {searchQuery.trim()
+                ? `No matches for "${searchQuery}"`
+                : selectedFilter === "all"
                 ? "Check back later or refresh"
                 : `No ${selectedFilter}s available`}
             </Text>
@@ -496,6 +539,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.mainColor,
     fontStyle: "italic",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
   },
 });
 

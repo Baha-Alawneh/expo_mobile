@@ -14,6 +14,7 @@ import {
   getUserRegistrations,
   getTopRatedProjects,
   getTopRatedOfferings,
+  getTopRatedCompanies,
 } from '../apis/admin/Admin';
 
 const { width } = Dimensions.get('window');
@@ -25,12 +26,12 @@ const AnalyticsScreen = () => {
   const [timeRange, setTimeRange] = useState('week');
   const [registrations, setRegistrations] = useState([]);
   const [topProjects, setTopProjects] = useState([]);
-  const [topOfferings, setTopOfferings] = useState([]);
+  const [topCompanies, setTopCompanies] = useState([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
 
-  // Fetch projects and offerings once on mount
+  // Fetch projects and companies once on mount
   useEffect(() => {
-    fetchProjectsAndOfferings();
+    fetchProjectsAndCompanies();
   }, []);
 
   // Fetch registrations when time range changes
@@ -54,24 +55,24 @@ const AnalyticsScreen = () => {
     }
   };
 
-  const fetchProjectsAndOfferings = async () => {
+  const fetchProjectsAndCompanies = async () => {
     setLoading(true);
     try {
-      const [projectsResponse, offeringsResponse] = await Promise.all([
+      const [projectsResponse, companiesResponse] = await Promise.all([
         getTopRatedProjects(),
-        getTopRatedOfferings(),
+        getTopRatedCompanies(),
       ]);
 
       console.log('Projects response:', projectsResponse);
-      console.log('Offerings response:', offeringsResponse);
+      console.log('Companies response:', companiesResponse);
 
       if (projectsResponse.success) {
         console.log('Setting top projects:', projectsResponse.data);
         setTopProjects(projectsResponse.data);
       }
-      if (offeringsResponse.success) {
-        console.log('Setting top offerings:', offeringsResponse.data);
-        setTopOfferings(offeringsResponse.data);
+      if (companiesResponse.success) {
+        console.log('Setting top companies:', companiesResponse.data);
+        setTopCompanies(companiesResponse.data);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -369,15 +370,15 @@ const AnalyticsScreen = () => {
           )}
         </View>
 
-        {/* Top 5 Offerings Bar Chart */}
+        {/* Top 5 Companies Bar Chart */}
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Top 5 Highest-Rated Offerings</Text>
-          {topOfferings && topOfferings.length > 0 ? (
-            renderBarChart(topOfferings, 'name')
+          <Text style={styles.chartTitle}>Top 5 Highest-Rated Companies</Text>
+          {topCompanies && topCompanies.length > 0 ? (
+            renderBarChart(topCompanies, 'company_name')
           ) : (
             <View style={styles.emptyChart}>
-              <Text style={styles.emptyText}>No rated offerings available yet</Text>
-              <Text style={styles.emptySubtext}>Offerings need ratings from users to appear here</Text>
+              <Text style={styles.emptyText}>No rated companies available yet</Text>
+              <Text style={styles.emptySubtext}>Companies need ratings from users to appear here</Text>
             </View>
           )}
         </View>

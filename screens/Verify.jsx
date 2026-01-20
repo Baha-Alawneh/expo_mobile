@@ -111,8 +111,10 @@ const Verify = ({ route, navigation }) => {
         return;
       }
 
+      // Set success status for green input boxes
       setValidationStatus("success");
 
+      // Register the user
       const regResult = await registerUser({
         name,
         email,
@@ -120,18 +122,29 @@ const Verify = ({ route, navigation }) => {
         role,
       });
 
-      Toast.show({
-        type: regResult.success ? "success" : "error",
-        text1: regResult.success ? "Success" : "Error",
-        text2: regResult.message,
-        visibilityTime: 3000,
-        position: "top",
-      });
-
       if (regResult.success) {
+        // Show only success notification
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "Registered Successfully",
+          visibilityTime: 2000,
+          position: "top",
+        });
+
+        // Wait 2 seconds before navigating to Login
         setTimeout(() => {
           navigation.navigate("Login");
-        }, 1500);
+        }, 2000);
+      } else {
+        // Show error if registration failed
+        Toast.show({
+          type: "error",
+          text1: "Registration Failed",
+          text2: regResult.message || "Unable to complete registration",
+          position: "top",
+        });
+        setValidationStatus("error");
       }
     } catch (error) {
       setValidationStatus("error");

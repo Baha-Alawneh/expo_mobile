@@ -85,10 +85,10 @@ const AdminDashboard = ({ navigation, onNavigateToAnalytics, onTabChange }) => {
               <View style={styles.actionIconContainer}>
                 <Ionicons name="briefcase" size={24} color="#FFF" />
               </View>
-              <Text style={styles.actionText}>Review Offers</Text>
-              {stats?.offerings?.pending > 0 && (
+              <Text style={styles.actionText}>Review Companies</Text>
+              {stats?.companies?.pending > 0 && (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{stats.offerings.pending}</Text>
+                  <Text style={styles.badgeText}>{stats.companies.pending}</Text>
                 </View>
               )}
             </TouchableOpacity>

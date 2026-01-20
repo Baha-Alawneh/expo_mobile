@@ -74,20 +74,6 @@ const ModernSidebar = ({
       gradient: ["#3b82f6", "#06b6d4"],
       badge: chatUnreadCount,
     },
-    {
-      icon: "play-circle",
-      label: "Reels",
-      route: "ReelsScreen",
-      color: "#ec4899",
-      gradient: ["#ec4899", "#f43f5e"],
-    },
-    {
-      icon: "map",
-      label: "Event Map",
-      route: "map",
-      color: "#10b981",
-      gradient: ["#10b981", "#059669"],
-    },
   ];
 
   const handleMenuPress = (route) => {
@@ -210,6 +196,13 @@ const ModernSidebar = ({
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Additional Info */}
+            <View style={styles.footerSection}>
+              <View style={styles.divider} />
+              <Text style={styles.footerText}>Version 1.0.0</Text>
+              <Text style={styles.footerSubText}>TEDI-Najah Expo</Text>
+            </View>
           </ScrollView>
         </Animated.View>
       </View>
@@ -228,10 +221,19 @@ const styles = StyleSheet.create({
   sidebar: {
     position: "absolute",
     right: 0,
-    width: width * 0.85,
-    maxWidth: 380,
-    height: height,
-    backgroundColor: "#f8fafc",
+    top: 0,
+    bottom: 0,
+    width: width * 0.8,
+    maxWidth: 340,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: -5,
+      height: 0,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 20,
   },
   sidebarHeader: {
     paddingTop: Platform.OS === "ios" ? 60 : 40,
@@ -285,36 +287,38 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     flex: 1,
+    backgroundColor: "#f8fafc",
   },
   menuSection: {
-    padding: 20,
+    paddingTop: 20,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     color: "#64748b",
-    marginBottom: 12,
-    letterSpacing: 0.5,
     textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   menuItem: {
-    marginBottom: 8,
-  },
-  menuItemContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    shadowColor: "#000",
+    marginBottom: 10,
+    shadowColor: "#1b2e4f",
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
+  },
+  menuItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
   },
   iconContainer: {
     width: 44,
@@ -346,6 +350,27 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "700",
+  },
+  footerSection: {
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  divider: {
+    width: "60%",
+    height: 1,
+    backgroundColor: "#e2e8f0",
+    marginBottom: 20,
+  },
+  footerText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 4,
+  },
+  footerSubText: {
+    fontSize: 12,
+    color: "#94a3b8",
   },
 });
 

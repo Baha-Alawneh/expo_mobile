@@ -21,10 +21,11 @@ import MyReelsTab from "../components/MyReelsTab";
 import { useFocusEffect } from "@react-navigation/native";
 
 const ReelsScreen = ({ navigation, route }) => {
-  const { userRole } = route.params || {};
+  const { userRole, fromNavBar } = route.params || {};
   
   // States
-  const [activeTab, setActiveTab] = useState("all"); // "all" or "my-account"
+  // When accessed from NavBar, default to "all" to show full feed
+  const [activeTab, setActiveTab] = useState("all");
   const [subTab, setSubTab] = useState("my-reels"); // "my-reels" or "add-new" (for my-account tab)
   const [allReels, setAllReels] = useState([]);
   const [myReels, setMyReels] = useState([]);
@@ -251,61 +252,107 @@ const ReelsScreen = ({ navigation, route }) => {
 
     if (activeTab === "all") {
       return (
-        <ReelsFeed
-          reels={allReels}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          navigation={navigation}
-        />
+        <View style={{ flex: 1 }} onLayout={(event) => {
+          // This ensures ReelsFeed knows its actual available height
+          const { height } = event.nativeEvent.layout;
+          // Store height if needed for future use
+        }}>
+          <ReelsFeed
+            reels={allReels}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            navigation={navigation}
+          />
+        </View>
       );
     }
 
     if (activeTab === "my-account") {
       return (
-        <MyReelsTab
-          userId={userId}
-          userData={userData}
-          myReels={myReels}
-          subTab={subTab}
-          setSubTab={setSubTab}
-          onReelUploaded={handleReelUploaded}
-          onReelDeleted={handleReelDeleted}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-        />
+        <View style={{ flex: 1 }}>
+          {/* Back to feed button when in My Account from NavBar */}
+          {fromNavBar && (
+            <View style={styles.navBarHeader}>
+              <TouchableOpacity
+                style={styles.backToFeedButton}
+                onPress={() => setActiveTab("all")}
+              >
+                <Ionicons name="arrow-back" size={24} color={Colors.mainColor} />
+                <Text style={styles.backToFeedText}>Back to Feed</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <MyReelsTab
+            userId={userId}
+            userData={userData}
+            myReels={myReels}
+            subTab={subTab}
+            setSubTab={setSubTab}
+            onReelUploaded={handleReelUploaded}
+            onReelDeleted={handleReelDeleted}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        </View>
       );
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.mainColor} />
-      
-      {/* Header */}
-      <View style={styles.header}>
+  // Render floating action button for Students/Companies when accessed from NavBar
+  const renderFloatingButton = () => {
+    // Only show for students/companies when accessed from NavBar and viewing "all" tab
+    if (fromNavBar && canUpload && activeTab === "all") {
+      return (
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          style={styles.floatingButton}
+          onPress={() => setActiveTab("my-account")}
+          activeOpacity={0.8}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="add" size={28} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reels</Text>
-        <View style={styles.headerRight} />
-      </View>
+      );
+    }
+    return null;
+  };
 
-      {/* Tab Buttons */}
-      {renderTabButtons()}
+  return (
+    <View style={styles.container}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={fromNavBar ? "transparent" : Colors.mainColor}
+        translucent={fromNavBar}
+      />
+      
+      {/* Header - Hide when accessed from Navigation Bar */}
+      {!fromNavBar && (
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Reels</Text>
+          <View style={styles.headerRight} />
+        </View>
+      )}
+
+      {/* Tab Buttons - Hide when accessed from Navigation Bar */}
+      {!fromNavBar && renderTabButtons()}
 
       {/* Content */}
       <View style={styles.content}>{renderContent()}</View>
-    </SafeAreaView>
+
+      {/* Floating Action Button for Students/Companies */}
+      {renderFloatingButton()}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
   },
   header: {
     flexDirection: "row",
@@ -371,6 +418,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    backgroundColor: "#000",
   },
   loadingContainer: {
     flex: 1,
@@ -381,6 +429,42 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: "#666",
+  },
+  floatingButton: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.mainColor,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  navBarHeader: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  backToFeedButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backToFeedText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.mainColor,
+    marginLeft: 8,
   },
 });
 
