@@ -43,7 +43,7 @@ import {
   deleteNotification,
 } from "../utils/notificationService";
 
-const Student = ({ navigation }) => {
+const Student = ({ navigation, route }) => {
   // States
   const [activeTab, setActiveTab] = useState("explore");
   const [showNotifications, setShowNotifications] = useState(false);
@@ -55,6 +55,17 @@ const Student = ({ navigation }) => {
   const [newSkill, setNewSkill] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [boothToHighlight, setBoothToHighlight] = useState(null);
+
+  // Handle navigation params for booth highlighting
+  useEffect(() => {
+    if (route?.params?.activeTab) {
+      setActiveTab(route.params.activeTab);
+    }
+    if (route?.params?.boothData) {
+      setBoothToHighlight(route.params.boothData);
+    }
+  }, [route?.params]);
 
   // Helper function to get status color and text
   const getStatusInfo = (status) => {
@@ -765,6 +776,8 @@ const Student = ({ navigation }) => {
               navigation={navigation}
               userRole="student"
               userId={studentData.id || studentData.student_id}
+              boothToHighlight={boothToHighlight}
+              onBoothHighlighted={() => setBoothToHighlight(null)}
             />
           )}
         </View>

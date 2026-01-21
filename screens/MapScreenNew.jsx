@@ -110,7 +110,7 @@ const AdminFabMenu = ({ visible, onAdd, onAutoAssign, onClear, onRefresh, onAddB
   );
 };
 
-const MapScreenNew = ({ navigation, route, userRole: userRoleProp, userId: userIdProp }) => {
+const MapScreenNew = ({ navigation, route, userRole: userRoleProp, userId: userIdProp, boothToHighlight, onBoothHighlighted }) => {
   // Support both route.params (from navigation) and direct props (from direct component usage)
   const { userRole, userId } = route?.params || { userRole: userRoleProp, userId: userIdProp };
   
@@ -155,6 +155,25 @@ const MapScreenNew = ({ navigation, route, userRole: userRoleProp, userId: userI
   
   console.log('MapScreenNew - userRole:', userRole);
   console.log('MapScreenNew - isAdmin:', isAdmin);
+
+  // Handle booth highlighting from navigation
+  useEffect(() => {
+    if (boothToHighlight && booths.length > 0) {
+      const booth = booths.find(b => 
+        b.booth_id === boothToHighlight.booth_id || 
+        b.booth_number === boothToHighlight.booth_number
+      );
+      
+      if (booth) {
+        setHighlightedBooth(booth);
+        setSelectedBooth(booth);
+        // Clear the highlight after showing
+        if (onBoothHighlighted) {
+          setTimeout(() => onBoothHighlighted(), 100);
+        }
+      }
+    }
+  }, [boothToHighlight, booths]);
 
   // Fetch booths and borders from API
   useEffect(() => {

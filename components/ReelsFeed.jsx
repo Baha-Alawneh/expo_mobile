@@ -9,11 +9,13 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/constants";
 import Slider from "@react-native-community/slider";
+import { getReelUserBooth } from "../apis/reel/Reel";
 
 const { height, width } = Dimensions.get("window");
 
@@ -101,6 +103,35 @@ const ReelsFeed = ({ reels, refreshing, onRefresh, navigation, containerHeight }
     if (minutes > 0) return `${minutes}m ago`;
     return "Just now";
   };
+
+  const handleNavigateToBooth = useCallback(async (reelId) => {
+    try {
+      const response = await getReelUserBooth(reelId);
+      const boothData = response.data || response;
+      
+      if (!boothData.booth_number) {
+        Alert.alert("No Booth Assigned", "This user doesn't have a booth assigned yet.");
+        return;
+      }
+
+      // Navigate to map with booth location
+      navigation.navigate("Student", {
+        activeTab: "map",
+        boothData: {
+          booth_id: boothData.booth_id,
+          booth_number: boothData.booth_number,
+          location_x: boothData.location_x,
+          location_y: boothData.location_y,
+          zone_type: boothData.zone_type,
+          user_name: boothData.user_name,
+          role: boothData.role,
+        }
+      });
+    } catch (error) {
+      console.error("Error navigating to booth:", error);
+      Alert.alert("Error", "Failed to load booth information.");
+    }
+  }, [navigation]);
 
   const renderReelItem = useCallback(({ item, index }) => {
     const isCurrentVideo = index === currentIndex;
@@ -197,6 +228,14 @@ const ReelsFeed = ({ reels, refreshing, onRefresh, navigation, containerHeight }
                     : "User"}
                 </Text>
               </View>
+              
+              <TouchableOpacity 
+                style={styles.boothButton}
+                onPress={() => handleNavigateToBooth(item.reel_id)}
+              >
+                <Ionicons name="map" size={20} color="#fff" />
+                <Text style={styles.boothButtonText}>View Booth</Text>
+              </TouchableOpacity>
             </View>
 
             {item.description ? (
@@ -354,6 +393,25 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0, 0, 0, 0.9)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  },
+  boothButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.mainColor,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  boothButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#fff",
   },
   descriptionContainer: {
     marginBottom: 8,

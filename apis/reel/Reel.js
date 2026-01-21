@@ -157,3 +157,19 @@ export const deleteReel = async (reelId) => {
     throw error;
   }
 };
+
+// Get booth information for the user who created a reel
+export const getReelUserBooth = async (reelId) => {
+  try {
+    const headers = await getAuthHeaders();
+    
+    const response = await axios.get(`${BASE_URL}/reels/${reelId}/booth`, {
+      headers,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reel user booth:", error);
+    throw error;
+  }
+};
