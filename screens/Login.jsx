@@ -23,6 +23,7 @@ const Login = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleLogin = async () => {
@@ -123,7 +124,7 @@ const Login = () => {
                 <TextInput
                   placeholder="Enter your password"
                   placeholderTextColor="rgba(255,255,255,0.4)"
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
                   // Removed focus handlers
@@ -131,6 +132,16 @@ const Login = () => {
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={22}
+                    color={Colors.GRAY}
+                  />
+                </TouchableOpacity>
               </View>
               {errors.password && (
                 <Text style={styles.errorText}>{errors.password}</Text>
@@ -138,7 +149,7 @@ const Login = () => {
             </View>
             {/* Forgot Password */}
             <TouchableOpacity
-              onPress={() => Alert.alert("Forgot password")}
+              onPress={() => navigation.navigate("ForgotPassword")}
               style={styles.forgotContainer}
             >
               <Text style={styles.forgotText}>Forgot Password?</Text>
@@ -301,6 +312,9 @@ const styles = StyleSheet.create({
   },
   inputIcon: {
     marginRight: 12,
+  },
+  eyeIcon: {
+    padding: 4,
   },
   textInput: {
     flex: 1,

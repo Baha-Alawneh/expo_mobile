@@ -5,6 +5,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SignUp from "../screens/SignUp";
 import Login from "../screens/Login";
 import Verify from "../screens/Verify";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/ResetPasswordScreen";
 import Student from "../screens/Student";
 import Company from "../screens/Company";
 import Visitor from "../screens/Visitor";
@@ -34,6 +36,16 @@ export default function App() {
           <Stack.Screen
             name="Login"
             component={Login}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
             options={{ headerShown: false }}
           />
           <Stack.Screen

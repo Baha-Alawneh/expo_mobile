@@ -14,47 +14,50 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "../constants/config";
 import Toast from "react-native-toast-message";
 import { Colors } from "../constants/constants";
-import { registerUser } from "../apis/user/SignUp";
+import { registerUser, verifyPasswordResetCode } from "../apis/user/SignUp";
 
 const Verify = ({ route, navigation }) => {
   const params = route?.params || {};
-  const { name = "", email = "", password = "", role = "" } = params;
+  const { name = "", email = "", password = "", role = "", isPasswordReset = false } = params;
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [validationStatus, setValidationStatus] = useState(null); // null, 'success', 'error'
   const inputRefs = useRef([]);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/users/send-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          Toast.show({
-            type: "info",
-            text1: "Verification Code Sent",
-            text2: data.message || "Check your email for the code.",
-            position: "top",
-          });
-        } else {
+    // Only send code for signup flow (not for password reset, as code is sent from ForgotPasswordScreen)
+    if (!isPasswordReset) {
+      fetch(`${BASE_URL}/users/send-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            Toast.show({
+              type: "info",
+              text1: "Verification Code Sent",
+              text2: data.message || "Check your email for the code.",
+              position: "top",
+            });
+          } else {
+            Toast.show({
+              type: "error",
+              text1: "Error",
+              text2: data.message || "Failed to send verification code",
+              position: "top",
+            });
+          }
+        })
+        .catch((error) => {
           Toast.show({
             type: "error",
-            text1: "Error",
-            text2: data.message || "Failed to send verification code",
+            text1: "Network Error",
+            text2: error.message,
             position: "top",
           });
-        }
-      })
-      .catch((error) => {
-        Toast.show({
-          type: "error",
-          text1: "Network Error",
-          text2: error.message,
-          position: "top",
         });
-      });
+    }
   }, []);
 
   const handleCodeChange = (value, index) => {
@@ -92,6 +95,33 @@ const Verify = ({ route, navigation }) => {
     }
 
     try {
+      // Handle password reset flow
+      if (isPasswordReset) {
+        const verifyResult = await verifyPasswordResetCode(email, fullCode);
+
+        if (!verifyResult.success) {
+          setValidationStatus("error");
+          Toast.show({
+            type: "error",
+            text1: "Invalid Code",
+            text2: "The verification code is incorrect or expired.",
+            position: "top",
+          });
+          return;
+        }
+
+        // Set success status for green input boxes
+        setValidationStatus("success");
+
+        // Navigate to ResetPasswordScreen
+        setTimeout(() => {
+          navigation.navigate("ResetPassword", { email });
+        }, 500);
+
+        return;
+      }
+
+      // Handle signup flow
       const response = await fetch(`${BASE_URL}/users/verify-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

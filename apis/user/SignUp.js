@@ -119,3 +119,117 @@ export const loginUser = async (body, navigation) => {
     }
   }
 };
+
+// Send password reset code
+export const sendPasswordResetCode = async (email) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/forgot-password`,
+      { email },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        message: response.data.message || "Reset code sent to your email",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to send reset code",
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};
+
+// Verify password reset code
+export const verifyPasswordResetCode = async (email, code) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/verify-reset-code`,
+      { email, code },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        message: response.data.message || "Code verified successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Invalid verification code",
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};
+
+// Reset password
+export const resetPassword = async (email, newPassword) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/reset-password`,
+      { email, newPassword },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.data.success) {
+      return {
+        success: true,
+        message: response.data.message || "Password reset successfully",
+      };
+    } else {
+      return {
+        success: false,
+        message: response.data.message || "Failed to reset password",
+      };
+    }
+  } catch (error) {
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data.message || error.response.data,
+      };
+    } else if (error.request) {
+      return { success: false, message: "No response from server" };
+    } else {
+      return { success: false, message: error.message };
+    }
+  }
+};

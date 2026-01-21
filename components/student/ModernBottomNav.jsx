@@ -47,18 +47,6 @@ const ModernBottomNav = ({ activeTab, onTabChange }) => {
       anim: projectAnim,
     },
     {
-      key: "projects",
-      icon: "briefcase",
-      label: "Projects",
-      anim: projectsAnim,
-    },
-    {
-      key: "companies",
-      icon: "business",
-      label: "Companies",
-      anim: companiesAnim,
-    },
-    {
       key: "jobs",
       icon: "bag-handle",
       label: "Jobs",
