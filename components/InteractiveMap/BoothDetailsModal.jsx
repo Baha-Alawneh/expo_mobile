@@ -20,6 +20,7 @@ const BoothDetailsModal = ({
   onDeassign,
   onViewDetails,
   isAdmin = false,
+  showFullInfo = false,
 }) => {
   if (!booth) return null;
 
@@ -89,15 +90,17 @@ const BoothDetailsModal = ({
                 </View>
               </View>
 
-              <View style={styles.infoRow}>
-                <Ionicons name="resize" size={20} color={Colors.mainColor} />
-                <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Dimensions</Text>
-                  <Text style={styles.infoValue}>
-                    {booth.width / 20}m × {booth.height / 20}m
-                  </Text>
+              {!showFullInfo && isAdmin && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="resize" size={20} color={Colors.mainColor} />
+                  <View style={styles.infoTextContainer}>
+                    <Text style={styles.infoLabel}>Dimensions</Text>
+                    <Text style={styles.infoValue}>
+                      {booth.width / 20}m × {booth.height / 20}m
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              )}
 
               {booth.location_description && (
                 <View style={styles.infoRow}>
@@ -125,15 +128,39 @@ const BoothDetailsModal = ({
                     <Text style={styles.assignmentType}>{assignedType}</Text>
                     <Text style={styles.assignmentName}>{assignedEntity}</Text>
                     {booth.description && (
-                      <Text style={styles.assignmentDescription} numberOfLines={2}>
+                      <Text style={styles.assignmentDescription} numberOfLines={showFullInfo ? undefined : 2}>
                         {booth.description}
                       </Text>
                     )}
                   </View>
                 </View>
 
+                {/* Additional Project/Company Info when showFullInfo is true */}
+                {showFullInfo && (
+                  <View style={styles.fullInfoContainer}>
+                    {booth.project_type && (
+                      <View style={styles.infoRow}>
+                        <Ionicons name="construct" size={18} color={Colors.mainColor} />
+                        <View style={styles.infoTextContainer}>
+                          <Text style={styles.infoLabel}>Project Type</Text>
+                          <Text style={styles.infoValue}>{booth.project_type}</Text>
+                        </View>
+                      </View>
+                    )}
+                    {booth.status && (
+                      <View style={styles.infoRow}>
+                        <Ionicons name="information-circle" size={18} color={Colors.mainColor} />
+                        <View style={styles.infoTextContainer}>
+                          <Text style={styles.infoLabel}>Status</Text>
+                          <Text style={styles.infoValue}>{booth.status}</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+
                 {/* View Details Button */}
-                {onViewDetails && (
+                {onViewDetails && !showFullInfo && (
                   <TouchableOpacity
                     style={styles.detailsButton}
                     onPress={() => onViewDetails(booth)}
@@ -297,6 +324,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     lineHeight: 20,
+  },
+  fullInfoContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 12,
   },
   detailsButton: {
     flexDirection: 'row',

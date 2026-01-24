@@ -122,14 +122,14 @@ const StudentJobsScreen = ({ navigation }) => {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-          {['all', 'full-time', 'part-time', 'internship', 'contract'].map(type => (
+          {['all', 'Full Time Job', 'Full Time Internship', 'Part Time Job', 'Part Time Internship'].map(type => (
             <TouchableOpacity
               key={type}
               style={[styles.filterChip, filterType === type && styles.activeFilterChip]}
               onPress={() => setFilterType(type)}
             >
               <Text style={[styles.filterText, filterType === type && styles.activeFilterText]}>
-                {type === 'all' ? 'All Jobs' : type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                {type === 'all' ? 'All Jobs' : type}
               </Text>
             </TouchableOpacity>
           ))}

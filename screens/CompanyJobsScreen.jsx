@@ -29,7 +29,8 @@ const CompanyJobsScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    job_type: 'full-time',
+    workType: 'Full Time',
+    positionType: 'Job',
     location: '',
     salary_range: '',
     requirements: '',
@@ -66,11 +67,19 @@ const CompanyJobsScreen = ({ navigation }) => {
     }
 
     try {
+      // Combine workType and positionType into job_type
+      const jobData = {
+        ...formData,
+        job_type: `${formData.workType} ${formData.positionType}`,
+      };
+      delete jobData.workType;
+      delete jobData.positionType;
+
       if (editingJob) {
-        await updateJobOffer(editingJob.job_id, formData);
+        await updateJobOffer(editingJob.job_id, jobData);
         Alert.alert('Success', 'Job updated successfully');
       } else {
-        await createJobOffer(formData);
+        await createJobOffer(jobData);
         Alert.alert('Success', 'Job created successfully');
       }
       setShowModal(false);
@@ -83,10 +92,16 @@ const CompanyJobsScreen = ({ navigation }) => {
 
   const handleEdit = (job) => {
     setEditingJob(job);
+    // Parse job_type into workType and positionType
+    const parts = job.job_type.split(' ');
+    const workType = parts.slice(0, -1).join(' ') || 'Full Time';
+    const positionType = parts[parts.length - 1] || 'Job';
+    
     setFormData({
       title: job.title,
       description: job.description,
-      job_type: job.job_type,
+      workType: workType,
+      positionType: positionType,
       location: job.location,
       salary_range: job.salary_range || '',
       requirements: job.requirements || '',
@@ -136,7 +151,8 @@ const CompanyJobsScreen = ({ navigation }) => {
     setFormData({
       title: '',
       description: '',
-      job_type: 'full-time',
+      workType: 'Full Time',
+      positionType: 'Job',
       location: '',
       salary_range: '',
       requirements: '',
@@ -162,6 +178,21 @@ const CompanyJobsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Header with Add Button */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Job Positions</Text>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+        >
+          <Ionicons name="add-circle" size={24} color="#3b82f6" />
+          <Text style={styles.addButtonText}>New Position</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.content}
         refreshControl={
@@ -290,6 +321,38 @@ const CompanyJobsScreen = ({ navigation }) => {
                 numberOfLines={4}
               />
 
+              <Text style={styles.label}>Work Type *</Text>
+              <View style={styles.pickerContainer}>
+                <TouchableOpacity
+                  style={[styles.pickerButton, formData.workType === 'Full Time' && styles.pickerButtonActive]}
+                  onPress={() => setFormData({...formData, workType: 'Full Time'})}
+                >
+                  <Text style={[styles.pickerButtonText, formData.workType === 'Full Time' && styles.pickerButtonTextActive]}>Full Time</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.pickerButton, formData.workType === 'Part Time' && styles.pickerButtonActive]}
+                  onPress={() => setFormData({...formData, workType: 'Part Time'})}
+                >
+                  <Text style={[styles.pickerButtonText, formData.workType === 'Part Time' && styles.pickerButtonTextActive]}>Part Time</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.label}>Position Type *</Text>
+              <View style={styles.pickerContainer}>
+                <TouchableOpacity
+                  style={[styles.pickerButton, formData.positionType === 'Job' && styles.pickerButtonActive]}
+                  onPress={() => setFormData({...formData, positionType: 'Job'})}
+                >
+                  <Text style={[styles.pickerButtonText, formData.positionType === 'Job' && styles.pickerButtonTextActive]}>Job</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.pickerButton, formData.positionType === 'Internship' && styles.pickerButtonActive]}
+                  onPress={() => setFormData({...formData, positionType: 'Internship'})}
+                >
+                  <Text style={[styles.pickerButtonText, formData.positionType === 'Internship' && styles.pickerButtonTextActive]}>Internship</Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.label}>Location *</Text>
               <TextInput
                 style={styles.input}
@@ -343,6 +406,38 @@ const CompanyJobsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  headerTitle: { 
+    fontSize: 20, 
+    fontWeight: '700', 
+    color: '#1e293b', 
+    flex: 1 
+  },
+  addButton: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3b82f6',
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -354,7 +449,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e2e8f0',
   },
   pageTitle: { fontSize: 20, fontWeight: '700', color: '#1e293b', flex: 1 },
-  addButton: { backgroundColor: '#3b82f6', padding: 10, borderRadius: 8 },
   content: { flex: 1, padding: 16 },
   statsContainer: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   statCard: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 12, alignItems: 'center', elevation: 2 },
@@ -401,6 +495,29 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8 },
   input: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 14 },
   textArea: { height: 100, textAlignVertical: 'top' },
+  pickerContainer: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  pickerButton: { 
+    flex: 1, 
+    paddingVertical: 12, 
+    paddingHorizontal: 16,
+    backgroundColor: '#f8fafc', 
+    borderWidth: 2, 
+    borderColor: '#e2e8f0', 
+    borderRadius: 8, 
+    alignItems: 'center' 
+  },
+  pickerButtonActive: { 
+    backgroundColor: '#eff6ff', 
+    borderColor: '#3b82f6' 
+  },
+  pickerButtonText: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: '#64748b' 
+  },
+  pickerButtonTextActive: { 
+    color: '#3b82f6' 
+  },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 20, marginBottom: 20 },
   cancelBtn: { flex: 1, backgroundColor: '#e2e8f0', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   cancelBtnText: { color: '#475569', fontWeight: '600', fontSize: 14 },
