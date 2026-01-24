@@ -27,7 +27,6 @@ const SignUp = () => {
   const [errors, setErrors] = useState({});
 
   const userTypes = [
-    { value: "visitor", label: "Visitor", icon: "person" },
     { value: "student", label: "Student", icon: "school" },
     { value: "company", label: "Company", icon: "briefcase" },
   ];

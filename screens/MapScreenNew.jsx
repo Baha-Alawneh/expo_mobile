@@ -86,10 +86,10 @@ const AdminFabMenu = ({ visible, onAdd, onAutoAssign, onClear, onRefresh, onAddB
             <Ionicons name="add" size={24} color="#fff" />
           </ScaleButton>
 
-          <ScaleButton onPress={() => { onAddBorder(); setExpanded(false); }} style={[styles.fabItem, { backgroundColor: '#F59E0B' }]}>
+          {/* <ScaleButton onPress={() => { onAddBorder(); setExpanded(false); }} style={[styles.fabItem, { backgroundColor: '#F59E0B' }]}>
             <View style={styles.fabLabelContainer}><Text style={styles.fabLabel}>Add Border</Text></View>
             <Ionicons name="construct-outline" size={20} color="#fff" />
-          </ScaleButton>
+          </ScaleButton> */}
 
           <ScaleButton onPress={() => { onRefresh(); setExpanded(false); }} style={[styles.fabItem, { backgroundColor: '#10B981' }]}>
             <View style={styles.fabLabelContainer}><Text style={styles.fabLabel}>Refresh</Text></View>
@@ -336,9 +336,9 @@ const MapScreenNew = ({ navigation, route, userRole: userRoleProp, userId: userI
     setSelectedBooth(null);
     
     if (booth.assigned_to_project) {
-      navigation.navigate('ProjectDetailsScreen', { projectId: booth.assigned_to_project });
+      navigation.navigate('ProjectDetails', { project: { project_id: booth.assigned_to_project } });
     } else if (booth.assigned_to_company) {
-      navigation.navigate('CompanyDetailsScreen', { companyId: booth.assigned_to_company });
+      navigation.navigate('CompanyDetailsScreen', { company: { company_id: booth.assigned_to_company } });
     }
   };
 
