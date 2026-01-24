@@ -153,34 +153,34 @@ const AdminDashboard = ({ navigation, onNavigateToAnalytics, onTabChange }) => {
             </View>
           </View>
 
-          {/* Companies Offerings Stats */}
+          {/* Companies Stats */}
           <View style={styles.statsCard}>
             <View style={styles.statsHeader}>
               <View style={styles.statsIconWrapper}>
                 <Ionicons name="business" size={20} color="#00B894" />
               </View>
-              <Text style={styles.statsCardTitle}>Companies Offerings</Text>
+              <Text style={styles.statsCardTitle}>Companies</Text>
             </View>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{stats?.offerings?.total || 0}</Text>
+                <Text style={styles.statValue}>{stats?.companies?.total || 0}</Text>
                 <Text style={styles.statLabel}>Total</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={[styles.statValue, { color: "#00B894" }]}>
-                  {stats?.offerings?.approved || 0}
+                  {stats?.companies?.approved || 0}
                 </Text>
                 <Text style={styles.statLabel}>Approved</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={[styles.statValue, { color: "#FDCB6E" }]}>
-                  {stats?.offerings?.pending || 0}
+                  {stats?.companies?.pending || 0}
                 </Text>
                 <Text style={styles.statLabel}>Pending</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={[styles.statValue, { color: "#FF7675" }]}>
-                  {stats?.offerings?.rejected || 0}
+                  {stats?.companies?.rejected || 0}
                 </Text>
                 <Text style={styles.statLabel}>Rejected</Text>
               </View>
